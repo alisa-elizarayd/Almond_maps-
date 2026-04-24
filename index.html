@@ -96,7 +96,7 @@
       box-shadow: 0 12px 24px rgba(37, 9, 5, 0.2);
     }
 
-    /* ========== RESIZE HANDLES (полностью из Monaco) ========== */
+    /* ========== RESIZE HANDLES ========== */
     .node .resize-handle {
       position: absolute;
       z-index: 6;
@@ -340,6 +340,56 @@
       border: 1px solid var(--almond-choco);
       border-radius: 20px;
     }
+
+    /* Плоские текстовые узлы — без подложки */
+    .node.plain-text {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 4px 8px !important;
+      min-width: auto !important;
+      max-width: none !important;
+      border-radius: 4px !important;
+      transition: outline 0.1s ease;
+      cursor: text;
+    }
+
+    /* Лёгкий намёк при выделении */
+    .node.plain-text.selected {
+      outline: 2px dashed var(--almond-terra);
+      background: rgba(162, 101, 49, 0.05) !important;
+      box-shadow: none !important;
+    }
+
+    /* Простой ховер — только курсор */
+    .node.plain-text:hover {
+      transform: translate(-50%, -50%) scale(1.02);
+      background: rgba(162, 101, 49, 0.03) !important;
+    }
+
+    /* Для plain-текста показываем минимальные хендлы только при выделении */
+    .node.plain-text.selected .resize-handle::after {
+      opacity: 0.7;
+      width: 10px;
+      height: 10px;
+      font-size: 8px;
+    }
+
+    /* Анимация изменения размера шрифта */
+    .node .node-label,
+    .node .inline-node-editor {
+      transition: font-size 0.1s ease;
+    }
+
+    /* Индикатор текущего размера в попапе */
+    #fontSizeValue {
+      background: rgba(162, 101, 49, 0.15);
+      padding: 4px 8px;
+      border-radius: 20px;
+      font-weight: 500;
+      min-width: 45px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -374,6 +424,13 @@
       <div class="mt-1 flex gap-2">
         <input id="newNodeText" class="flex-1 rounded-full border border-[#A16531] bg-[#FFF8F0] px-4 py-2 text-sm" placeholder="Текст" />
         <button id="addNode" class="rounded-full bg-[#A16531] px-4 py-2 text-sm text-white cursor-pointer">➕</button>
+      </div>
+
+      <!-- Новая кнопка для добавления свободного текстового блока -->
+      <div class="mt-2 flex gap-2">
+        <button id="addPlainTextBtn" class="rounded-full bg-[#9C8A79] px-4 py-2 text-sm text-white cursor-pointer">
+          📝 Текст
+        </button>
       </div>
 
       <label class="block mt-3 text-sm font-medium text-[#4C2213]">✏️ Переименовать</label>
@@ -441,6 +498,9 @@
       <li>Вставьте конспект → «Собрать карту»</li>
       <li>🥜 Перетаскивайте узлы, меняйте размер (8 хендлов по краям и углам)</li>
       <li>Двойной клик по узлу — редактирование текста с форматированием B/I/U</li>
+      <li><strong>Новое!</strong> Кнопка «📝 Текст» — создаёт свободный текстовый блок без фона</li>
+      <li><strong>Новое!</strong> Кнопки A+/A- рядом с B/I/U меняют размер шрифта (8-128pt)</li>
+      <li>Ctrl/Cmd + / - для изменения размера шрифта, Ctrl+0 для сброса</li>
       <li>Shift + выделение нескольких узлов</li>
       <li>Shift при перетаскивании — отключает прилипание (Smart Guides)</li>
       <li>Экспорт — кнопка 📸 справа вверху</li>
@@ -453,6 +513,10 @@
   <button data-format="b" class="format-btn"><strong>B</strong></button>
   <button data-format="i" class="format-btn"><em>I</em></button>
   <button data-format="u" class="format-btn"><span style="text-decoration:underline;">U</span></button>
+  <div style="width:1px; height:30px; background:#A16531; margin:0 4px; opacity:0.3;"></div>
+  <button type="button" id="fontSizeDecrease" class="format-btn" title="Уменьшить шрифт"><span style="font-size:18px;">A-</span></button>
+  <button type="button" id="fontSizeIncrease" class="format-btn" title="Увеличить шрифт"><span style="font-size:22px;">A+</span></button>
+  <span id="fontSizeValue" style="font-size:12px;">16pt</span>
 </div>
 
 <script>
@@ -523,31 +587,18 @@ function escapeHtml(value) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// ========== ОПРЕДЕЛЕНИЕ КОНТРАСТА (светлый/тёмный текст) ==========
 function getContrastColor(hexColor) {
-  // Если цвет не задан или это не строка, возвращаем тёмный цвет по умолчанию
   if (!hexColor || typeof hexColor !== 'string') return '#250905';
-  
   let hex = hexColor.replace('#', '');
-  
-  // Поддержка 3-символьных цветов (#FFF → #FFFFFF)
   if (hex.length === 3) {
     hex = hex.split('').map(c => c + c).join('');
   }
-  
   const r = parseInt(hex.substring(0, 2), 16);
   const g = parseInt(hex.substring(2, 4), 16);
   const b = parseInt(hex.substring(4, 6), 16);
-  
-  // Формула яркости (воспринимаемая яркость)
   const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
-  
-  // Порог: если яркость меньше 128 → тёмный цвет → белый текст
   return brightness < 128 ? '#FFFFFF' : '#250905';
 }
-
-// Обновляем renderNodes() — добавляем динамический цвет текста
-// (найдите существующую функцию renderNodes и замените её на эту)
 
 function sanitizeNodeHtml(text) {
   const escaped = escapeHtml(text || "");
@@ -572,9 +623,17 @@ function worldFromClient(clientX, clientY) {
   return { x: (clientX - rect.left - state.panX) / state.scale, y: (clientY - rect.top - state.panY) / state.scale };
 }
 
-function createNode(text, parentId = null, x = 0, y = 0, color = "#F5DEB3") {
+// ОБНОВЛЁННАЯ ФУНКЦИЯ createNode с поддержкой plain-text и fontSize
+function createNode(text, parentId = null, x = 0, y = 0, color = "#F5DEB3", isPlainText = false) {
   const id = String(state.idCounter++);
-  state.nodes.set(id, { id, text, parentId, children: [], x, y, color, width: 156, height: 64 });
+  state.nodes.set(id, { 
+    id, text, parentId, children: [], 
+    x, y, color, 
+    width: isPlainText ? 140 : 156, 
+    height: isPlainText ? 32 : 64,
+    isPlainText: isPlainText,
+    fontSize: isPlainText ? 16 : 14
+  });
   if (parentId && state.nodes.has(parentId)) state.nodes.get(parentId).children.push(id);
   return id;
 }
@@ -722,8 +781,10 @@ function buildFromStrict(parsed) {
 function renderLines() {
   const parts = [];
   state.nodes.forEach(node => {
+    if (node.isPlainText) return;
     if (!node.parentId) return;
     const parent = state.nodes.get(node.parentId);
+    if (parent.isPlainText) return;
     const c1x = parent.x + (node.x - parent.x) * 0.35;
     const c1y = parent.y;
     const c2x = parent.x + (node.x - parent.x) * 0.65;
@@ -738,21 +799,31 @@ function renderNodes() {
   state.nodes.forEach(node => {
     const selectedClass = state.selectedIds.has(node.id) ? "selected" : "";
     const editingClass = state.inlineEditingId === node.id ? "editing" : "";
+    const plainClass = node.isPlainText ? "plain-text" : "";
+    
     const labelHtml = sanitizeNodeHtml(node.text);
     const editorHtml = state.inlineEditingId === node.id
-      ? `<textarea class="inline-node-editor" data-node-editor="${node.id}">${escapeHtml(node.text)}</textarea>`
-      : `<span class="node-label" style="color: ${getContrastColor(node.color)};">${labelHtml}</span>`;
+      ? `<textarea class="inline-node-editor" data-node-editor="${node.id}" style="font-size:${node.fontSize || 14}px;">${escapeHtml(node.text)}</textarea>`
+      : `<span class="node-label" style="color: ${node.isPlainText ? '#250905' : getContrastColor(node.color)}; font-size:${node.fontSize || 14}px;">${labelHtml}</span>`;
     
-    html.push(`<div class="node ${selectedClass} ${editingClass}" data-id="${node.id}" style="left:${node.x}px; top:${node.y}px; width:${node.width}px; height:${node.height}px; background:${node.color};">
+    const handles = node.isPlainText ? `
+      <span class="resize-handle corner corner-br" data-handle="bottom-right" data-icon="↘" title="Изменить размер шрифта"></span>
+    ` : `
+      <span class="resize-handle edge-left" data-handle="left" data-icon="↔" title="Изменить ширину (влево/вправо)"></span>
+      <span class="resize-handle edge-right" data-handle="right" data-icon="↔" title="Изменить ширину (влево/вправо)"></span>
+      <span class="resize-handle edge-top" data-handle="top" data-icon="↕" title="Изменить высоту (вверх/вниз)"></span>
+      <span class="resize-handle edge-bottom" data-handle="bottom" data-icon="↕" title="Изменить высоту (вверх/вниз)"></span>
+      <span class="resize-handle corner corner-tl" data-handle="top-left" data-icon="↖" title="Изменить размер по диагонали"></span>
+      <span class="resize-handle corner corner-tr" data-handle="top-right" data-icon="↗" title="Изменить размер по диагонали"></span>
+      <span class="resize-handle corner corner-bl" data-handle="bottom-left" data-icon="↙" title="Изменить размер по диагонали"></span>
+      <span class="resize-handle corner corner-br" data-handle="bottom-right" data-icon="↘" title="Изменить размер по диагонали"></span>
+    `;
+    
+    const bgColor = node.isPlainText ? 'transparent' : node.color;
+    
+    html.push(`<div class="node ${selectedClass} ${editingClass} ${plainClass}" data-id="${node.id}" style="left:${node.x}px; top:${node.y}px; width:${node.width}px; height:${node.height}px; background:${bgColor};">
         ${editorHtml}
-        <span class="resize-handle edge-left" data-handle="left" data-icon="↔" title="Изменить ширину (влево/вправо)"></span>
-        <span class="resize-handle edge-right" data-handle="right" data-icon="↔" title="Изменить ширину (влево/вправо)"></span>
-        <span class="resize-handle edge-top" data-handle="top" data-icon="↕" title="Изменить высоту (вверх/вниз)"></span>
-        <span class="resize-handle edge-bottom" data-handle="bottom" data-icon="↕" title="Изменить высоту (вверх/вниз)"></span>
-        <span class="resize-handle corner corner-tl" data-handle="top-left" data-icon="↖" title="Изменить размер по диагонали"></span>
-        <span class="resize-handle corner corner-tr" data-handle="top-right" data-icon="↗" title="Изменить размер по диагонали"></span>
-        <span class="resize-handle corner corner-bl" data-handle="bottom-left" data-icon="↙" title="Изменить размер по диагонали"></span>
-        <span class="resize-handle corner corner-br" data-handle="bottom-right" data-icon="↘" title="Изменить размер по диагонали"></span>
+        ${handles}
       </div>`);
   });
   nodesLayer.innerHTML = html.join("");
@@ -770,7 +841,7 @@ function renderPalette() {
       if (!state.selectedIds.size) return;
       state.selectedIds.forEach(id => {
         const node = state.nodes.get(id);
-        if (node) node.color = color;
+        if (node && !node.isPlainText) node.color = color;
       });
       render();
     });
@@ -784,11 +855,13 @@ function renderSelectedMeta() {
   if (!selectedCount || !node) {
     selectedName.textContent = "нет";
     renameNodeText.value = "";
+    updateFontSizeDisplay();
     return;
   }
   const plain = stripFormattingTags(node.text);
   selectedName.textContent = selectedCount > 1 ? `${plain} (+${selectedCount - 1})` : plain;
   renameNodeText.value = plain;
+  updateFontSizeDisplay();
 }
 
 function setSelection(ids, primaryId = null) {
@@ -839,7 +912,6 @@ function getSelectionRectForField(field) {
   const start = field.selectionStart ?? 0;
   const end = field.selectionEnd ?? start;
   const value = field.value || "";
-  const style = window.getComputedStyle(field);
   const mirror = document.createElement("div");
   const scaleX = Math.max(0.1, fieldRect.width / Math.max(1, field.clientWidth));
   const scaleY = Math.max(0.1, fieldRect.height / Math.max(1, field.clientHeight));
@@ -949,7 +1021,7 @@ function openInlineEditor(nodeId) {
   requestAnimationFrame(() => {
     const editor = nodesLayer.querySelector(`.inline-node-editor[data-node-editor="${nodeId}"]`);
     if (editor) {
-      editor.style.color = getContrastColor(node.color);
+      editor.style.color = node.isPlainText ? '#250905' : getContrastColor(node.color);
       editor.focus();
       editor.select();
       state.activeTextField = editor;
@@ -1051,6 +1123,84 @@ function copySyntaxTemplate() {
 function applyMapBackground(color) {
   mapShell.style.background = color;
   setStatus("Фон обновлён.");
+}
+
+// ========== НОВЫЕ ФУНКЦИИ ДЛЯ УПРАВЛЕНИЯ РАЗМЕРОМ ШРИФТА ==========
+function getFontSizeInPt(node) {
+  return node.fontSize || 14;
+}
+
+function setFontSize(node, newSize) {
+  newSize = Math.min(128, Math.max(8, newSize));
+  node.fontSize = newSize;
+  
+  if (node.isPlainText) {
+    const textLength = node.text.length;
+    const approxWidth = Math.min(600, Math.max(80, textLength * (newSize / 2) + 20));
+    const approxHeight = Math.min(400, Math.max(32, newSize * 1.5));
+    node.width = approxWidth;
+    node.height = approxHeight;
+  }
+}
+
+function changeFontSize(delta) {
+  if (!state.selectedIds.size) {
+    setStatus("Сначала выделите элемент на карте.", true);
+    return;
+  }
+  
+  let changedCount = 0;
+  state.selectedIds.forEach(id => {
+    const node = state.nodes.get(id);
+    if (node) {
+      const currentSize = getFontSizeInPt(node);
+      const newSize = currentSize + delta;
+      setFontSize(node, newSize);
+      changedCount++;
+    }
+  });
+  
+  if (state.selectedIds.size === 1) {
+    const node = state.nodes.get(state.primarySelectedId);
+    if (node) {
+      const sizeSpan = document.getElementById("fontSizeValue");
+      if (sizeSpan) sizeSpan.textContent = `${Math.round(getFontSizeInPt(node))}pt`;
+    }
+  }
+  
+  render();
+  setStatus(`Размер шрифта изменён для ${changedCount} элемента(ов).`);
+}
+
+function updateFontSizeDisplay() {
+  if (state.selectedIds.size === 1) {
+    const node = state.nodes.get(state.primarySelectedId);
+    if (node) {
+      const sizeSpan = document.getElementById("fontSizeValue");
+      if (sizeSpan) sizeSpan.textContent = `${Math.round(getFontSizeInPt(node))}pt`;
+      return;
+    }
+  }
+  const sizeSpan = document.getElementById("fontSizeValue");
+  if (sizeSpan) sizeSpan.textContent = state.selectedIds.size > 1 ? "множ." : "16pt";
+}
+
+function addPlainTextAtViewportCenter() {
+  const rect = mapShell.getBoundingClientRect();
+  const centerScreenX = rect.width / 2;
+  const centerScreenY = rect.height / 2;
+  
+  const worldX = (centerScreenX - state.panX) / state.scale;
+  const worldY = (centerScreenY - state.panY) / state.scale;
+  
+  const id = createNode("Новый текст", null, worldX, worldY, null, true);
+  
+  setSelection([id], id);
+  
+  setTimeout(() => openInlineEditor(id), 50);
+  
+  render();
+  setStatus("Добавлен текстовый блок. Дважды кликните для редактирования.");
 }
 
 // ========== ВЫДЕЛЕНИЕ ПРЯМОУГОЛЬНИКОМ ==========
@@ -1182,7 +1332,7 @@ function onPointerDownMap(event) {
     state.dragStart = { worldX: world.x, worldY: world.y };
     state.dragSnapshot = new Map([...state.selectedIds].map(nodeId => {
       const node = state.nodes.get(nodeId);
-      return [nodeId, { x: node.x, y: node.y, width: node.width, height: node.height }];
+      return [nodeId, { x: node.x, y: node.y, width: node.width, height: node.height, fontSize: node.fontSize }];
     }));
     
     if (handleEl) {
@@ -1225,7 +1375,6 @@ function onPointerDownMap(event) {
 }
 
 function onPointerMoveMap(event) {
-  // Перемещение узлов с прилипанием
   if (state.dragMode === "move") {
     const world = worldFromClient(event.clientX, event.clientY);
     const rawDx = world.x - state.dragStart.worldX;
@@ -1251,7 +1400,6 @@ function onPointerMoveMap(event) {
     return;
   }
   
-  // ИЗМЕНЕНИЕ РАЗМЕРА УЗЛА (8 направлений)
   if (state.dragMode === "resize") {
     const world = worldFromClient(event.clientX, event.clientY);
     const dx = world.x - state.dragStart.worldX;
@@ -1259,6 +1407,20 @@ function onPointerMoveMap(event) {
     state.dragSnapshot.forEach((initial, nodeId) => {
       const node = state.nodes.get(nodeId);
       if (!node) return;
+      
+      // Для plain-текста — меняем font-size
+      if (node.isPlainText) {
+        const handle = state.dragHandle || "bottom-right";
+        if (handle === "bottom-right" || handle === "corner-br") {
+          const delta = (dx + dy) / 2;
+          const newSize = Math.min(128, Math.max(8, (initial.fontSize || 16) + delta));
+          node.fontSize = newSize;
+          node.width = Math.max(80, initial.width + dx);
+          node.height = Math.max(28, initial.height + dy);
+        }
+        return;
+      }
+      
       const handle = state.dragHandle || "bottom-right";
       let nextWidth = initial.width;
       let nextHeight = initial.height;
@@ -1291,13 +1453,11 @@ function onPointerMoveMap(event) {
     return;
   }
   
-  // Выделение прямоугольником
   if (state.dragMode === "select") {
     showSelectionRect(state.selectStartClient.x, state.selectStartClient.y, event.clientX, event.clientY);
     return;
   }
   
-  // Панорамирование
   if (!state.isPanning) return;
   const dx = event.clientX - state.panStart.clientX;
   const dy = event.clientY - state.panStart.clientY;
@@ -1343,10 +1503,7 @@ function closeIntro() {
   introModal.classList.remove("open");
 }
 
-
-
-
-// ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ЭКСПОРТА (обязательны!) ==========
+// ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ЭКСПОРТА ==========
 function hideUIElements() {
   const zoomControls = document.querySelector('.zoom-controls');
   const introBtn = document.getElementById('openIntroBtn');
@@ -1368,370 +1525,12 @@ function showUIElements() {
   if (exportBtn) exportBtn.style.visibility = 'visible';
   resizeHandles.forEach(h => h.style.visibility = 'visible');
 }
-// ========== ФОРМИРОВАНИЕ ИМЕНИ ФАЙЛА ==========
+
 function getDateString() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
 }
 
-// ========== ПРАВИЛЬНЫЙ ЭКСПОРТ PNG (цветной) ==========
-async function exportPNG_Colored() {
-  const container = document.getElementById('mapShell');
-  if (!container) { alert("Контейнер не найден"); return; }
-  
-  showLoading(true);
-  
-  const allNodes = document.querySelectorAll('.node');
-  const originalShadows = [];
-  allNodes.forEach(node => {
-    originalShadows.push({ node, shadow: node.style.boxShadow });
-    node.style.boxShadow = 'none';
-  });
-  
-  hideUIElements();
-  if (state.inlineEditingId && typeof closeInlineEditor === 'function') closeInlineEditor(true);
-  await new Promise(r => setTimeout(r, 200));
-  
-  try {
-    const bgColor = mapShell.style.background || '#E9B978';
-    const dataUrl = await htmlToImage.toPng(container, {
-      quality: 0.95,
-      pixelRatio: 2,
-      backgroundColor: bgColor
-    });
-    const link = document.createElement('a');
-    link.download = `mindmap_colored_${getDateString()}.png`;
-    link.href = dataUrl;
-    link.click();
-    setStatus("✅ PNG с цветным фоном сохранён!");
-  } catch (error) {
-    setStatus("❌ Ошибка: " + error.message, true);
-  } finally {
-    originalShadows.forEach(({ node, shadow }) => { node.style.boxShadow = shadow; });
-    showUIElements();
-    showLoading(false);
-    if (typeof render === 'function') render();
-  }
-}
-
-// ========== ПРАВИЛЬНЫЙ ЭКСПОРТ PNG (прозрачный) ==========
-async function exportPNG_Transparent() {
-  const container = document.getElementById('mapShell');
-  if (!container) { alert("Контейнер не найден"); return; }
-  
-  showLoading(true);
-  
-  const allNodes = document.querySelectorAll('.node');
-  const originalShadows = [];
-  allNodes.forEach(node => {
-    originalShadows.push({ node, shadow: node.style.boxShadow });
-    node.style.boxShadow = 'none';
-  });
-  
-  hideUIElements();
-  if (state.inlineEditingId && typeof closeInlineEditor === 'function') closeInlineEditor(true);
-  
-  // Сохраняем оригинальные фоны
-  const originalContainerBg = container.style.background;
-  const originalBodyBg = document.body.style.background;
-  const originalHtmlBg = document.documentElement.style.background;
-  
-  container.style.background = 'transparent';
-  document.body.style.background = 'transparent';
-  document.documentElement.style.background = 'transparent';
-  
-  await new Promise(r => setTimeout(r, 200));
-  
-  try {
-    const dataUrl = await htmlToImage.toPng(container, {
-      quality: 0.95,
-      pixelRatio: 2,
-      backgroundColor: null
-    });
-    const link = document.createElement('a');
-    link.download = `mindmap_transparent_${getDateString()}.png`;
-    link.href = dataUrl;
-    link.click();
-    setStatus("✅ PNG с прозрачным фоном сохранён!");
-  } catch (error) {
-    setStatus("❌ Ошибка: " + error.message, true);
-  } finally {
-    container.style.background = originalContainerBg;
-    document.body.style.background = originalBodyBg;
-    document.documentElement.style.background = originalHtmlBg;
-    originalShadows.forEach(({ node, shadow }) => { node.style.boxShadow = shadow; });
-    showUIElements();
-    showLoading(false);
-    if (typeof render === 'function') render();
-  }
-}
-
-// ========== ПРАВИЛЬНЫЙ ЭКСПОРТ PNG HQ ==========
-async function exportPNGHQ_Colored() {
-  const container = document.getElementById('mapShell');
-  if (!container) { alert("Контейнер не найден"); return; }
-  
-  showLoading(true);
-  
-  const allNodes = document.querySelectorAll('.node');
-  const originalShadows = [];
-  allNodes.forEach(node => {
-    originalShadows.push({ node, shadow: node.style.boxShadow });
-    node.style.boxShadow = 'none';
-  });
-  
-  hideUIElements();
-  if (state.inlineEditingId && typeof closeInlineEditor === 'function') closeInlineEditor(true);
-  await new Promise(r => setTimeout(r, 200));
-  
-  try {
-    const bgColor = mapShell.style.background || '#E9B978';
-    const dataUrl = await htmlToImage.toPng(container, {
-      quality: 1,
-      pixelRatio: 5,
-      backgroundColor: bgColor
-    });
-    const link = document.createElement('a');
-    link.download = `mindmap_hq_colored_${getDateString()}.png`;
-    link.href = dataUrl;
-    link.click();
-    setStatus("✅ PNG HQ (цветной) сохранён!");
-  } catch (error) {
-    setStatus("❌ Ошибка: " + error.message, true);
-  } finally {
-    originalShadows.forEach(({ node, shadow }) => { node.style.boxShadow = shadow; });
-    showUIElements();
-    showLoading(false);
-    if (typeof render === 'function') render();
-  }
-}
-
-async function exportPNGHQ_Transparent() {
-  const container = document.getElementById('mapShell');
-  if (!container) { alert("Контейнер не найден"); return; }
-  
-  showLoading(true);
-  
-  const allNodes = document.querySelectorAll('.node');
-  const originalShadows = [];
-  allNodes.forEach(node => {
-    originalShadows.push({ node, shadow: node.style.boxShadow });
-    node.style.boxShadow = 'none';
-  });
-  
-  hideUIElements();
-  if (state.inlineEditingId && typeof closeInlineEditor === 'function') closeInlineEditor(true);
-  
-  const originalContainerBg = container.style.background;
-  const originalBodyBg = document.body.style.background;
-  const originalHtmlBg = document.documentElement.style.background;
-  
-  container.style.background = 'transparent';
-  document.body.style.background = 'transparent';
-  document.documentElement.style.background = 'transparent';
-  
-  await new Promise(r => setTimeout(r, 200));
-  
-  try {
-    const dataUrl = await htmlToImage.toPng(container, {
-      quality: 1,
-      pixelRatio: 5,
-      backgroundColor: null
-    });
-    const link = document.createElement('a');
-    link.download = `mindmap_hq_transparent_${getDateString()}.png`;
-    link.href = dataUrl;
-    link.click();
-    setStatus("✅ PNG HQ (прозрачный) сохранён!");
-  } catch (error) {
-    setStatus("❌ Ошибка: " + error.message, true);
-  } finally {
-    container.style.background = originalContainerBg;
-    document.body.style.background = originalBodyBg;
-    document.documentElement.style.background = originalHtmlBg;
-    originalShadows.forEach(({ node, shadow }) => { node.style.boxShadow = shadow; });
-    showUIElements();
-    showLoading(false);
-    if (typeof render === 'function') render();
-  }
-}
-
-// ========== ПРАВИЛЬНЫЙ ЭКСПОРТ PDF (с полной картой, без обрезки) ==========
-async function exportPDF() {
-  const container = document.getElementById('mapShell');
-  const stage = document.getElementById('mapStage');
-  if (!container) { alert("Контейнер не найден"); return; }
-  
-  showLoading(true);
-  
-  const allNodes = document.querySelectorAll('.node');
-  const originalShadows = [];
-  allNodes.forEach(node => {
-    originalShadows.push({ node, shadow: node.style.boxShadow });
-    node.style.boxShadow = 'none';
-  });
-  
-  hideUIElements();
-  if (state.inlineEditingId && typeof closeInlineEditor === 'function') closeInlineEditor(true);
-  
-  const originalOverflow = container.style.overflow;
-  const originalPosition = stage.style.position;
-  const originalPanX = state.panX;
-  const originalPanY = state.panY;
-  const originalScale = state.scale;
-  
-  try {
-    state.panX = 0;
-    state.panY = 0;
-    state.scale = 1;
-    updateTransform();
-    
-    container.style.overflow = 'visible';
-    stage.style.position = 'relative';
-    
-    await new Promise(r => setTimeout(r, 150));
-    
-    const nodes = document.querySelectorAll('.node');
-    const edgesSvg = document.getElementById('edges');
-    
-    if (nodes.length === 0) {
-      throw new Error("Нет узлов для экспорта");
-    }
-    
-    // Вычисляем реальные границы всех узлов
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    
-    nodes.forEach(node => {
-      const left = parseFloat(node.style.left);
-      const top = parseFloat(node.style.top);
-      const width = node.offsetWidth;
-      const height = node.offsetHeight;
-      
-      const nodeLeft = left - width / 2;
-      const nodeRight = left + width / 2;
-      const nodeTop = top - height / 2;
-      const nodeBottom = top + height / 2;
-      const padding = 30;
-      
-      minX = Math.min(minX, nodeLeft - padding);
-      maxX = Math.max(maxX, nodeRight + padding);
-      minY = Math.min(minY, nodeTop - padding);
-      maxY = Math.max(maxY, nodeBottom + padding);
-    });
-    
-    if (edgesSvg) {
-      const linePaths = edgesSvg.querySelectorAll('.line');
-      linePaths.forEach(line => {
-        const bbox = line.getBBox();
-        if (bbox.x !== undefined) {
-          minX = Math.min(minX, bbox.x - 20);
-          minY = Math.min(minY, bbox.y - 20);
-          maxX = Math.max(maxX, bbox.x + bbox.width + 20);
-          maxY = Math.max(maxY, bbox.y + bbox.height + 20);
-        }
-      });
-    }
-    
-    const safePadding = 60;
-    const cropX = minX - safePadding;
-    const cropY = minY - safePadding;
-    const cropWidth = (maxX - minX) + safePadding * 2;
-    const cropHeight = (maxY - minY) + safePadding * 2;
-    
-    const bgColor = mapShell.style.background || '#E9B978';
-    
-    const canvas = await htmlToImage.toCanvas(container, {
-      pixelRatio: 3,
-      backgroundColor: bgColor,
-      quality: 1,
-      width: cropWidth,
-      height: cropHeight,
-      style: {
-        transform: `translate(${-cropX}px, ${-cropY}px)`,
-        transformOrigin: 'top left'
-      }
-    });
-    
-    const { jsPDF } = window.jspdf;
-    
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
-    const pdfWidth = 210;
-    let pdfHeight = (canvasHeight * pdfWidth) / canvasWidth;
-    const orientation = pdfHeight > 297 ? 'portrait' : 'landscape';
-    let finalPdfWidth, finalPdfHeight;
-    
-    if (orientation === 'portrait') {
-      finalPdfWidth = 210;
-      finalPdfHeight = Math.min(pdfHeight, 297);
-      if (pdfHeight > 297) {
-        const scale = 297 / pdfHeight;
-        finalPdfWidth = pdfWidth * scale;
-        finalPdfHeight = 297;
-      }
-    } else {
-      finalPdfWidth = 297;
-      finalPdfHeight = (canvasHeight * 297) / canvasWidth;
-      if (finalPdfHeight > 210) {
-        const scale = 210 / finalPdfHeight;
-        finalPdfWidth = 297 * scale;
-        finalPdfHeight = 210;
-      }
-    }
-    
-    const pdf = new jsPDF({
-      unit: 'mm',
-      format: 'a4',
-      orientation: orientation
-    });
-    
-    const imgData = canvas.toDataURL('image/jpeg', 0.98);
-    pdf.addImage(imgData, 'JPEG', 0, 0, finalPdfWidth, finalPdfHeight);
-    pdf.save(`mindmap_${getDateString()}.pdf`);
-    
-    setStatus("✅ PDF сохранён!");
-    
-  } catch (error) {
-    console.error('PDF ошибка:', error);
-    setStatus("❌ Ошибка PDF: " + error.message, true);
-  } finally {
-    originalShadows.forEach(({ node, shadow }) => { node.style.boxShadow = shadow; });
-    
-    container.style.overflow = originalOverflow;
-    stage.style.position = originalPosition;
-    state.panX = originalPanX;
-    state.panY = originalPanY;
-    state.scale = originalScale;
-    updateTransform();
-    
-    showUIElements();
-    showLoading(false);
-    if (typeof render === 'function') render();
-  }
-}
-
-
-// ========== ЗАГРУЗКА БИБЛИОТЕК ДЛЯ ЭКСПОРТА ==========
-async function loadExportLibraries() {
-  if (typeof htmlToImage === 'undefined') {
-    await new Promise(resolve => {
-      const script = document.createElement('script');
-      script.src = "https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js";
-      script.onload = resolve;
-      document.head.appendChild(script);
-    });
-  }
-  if (typeof window.jspdf === 'undefined') {
-    await new Promise(resolve => {
-      const script = document.createElement('script');
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-      script.onload = resolve;
-      document.head.appendChild(script);
-    });
-  }
-} 
-
-// ========== ПЕРЕМЕННАЯ ДЛЯ ЗАГРУЗКИ ==========
 let loadingOverlay = null;
 
 function showLoading(show) {
@@ -1765,7 +1564,280 @@ function showLoading(show) {
   }
 }
 
-// Кнопка экспорта
+// ========== ЭКСПОРТ PNG И PDF ==========
+async function exportPNG_Colored() {
+  const container = document.getElementById('mapShell');
+  if (!container) { alert("Контейнер не найден"); return; }
+  showLoading(true);
+  const allNodes = document.querySelectorAll('.node');
+  const originalShadows = [];
+  allNodes.forEach(node => {
+    originalShadows.push({ node, shadow: node.style.boxShadow });
+    node.style.boxShadow = 'none';
+  });
+  hideUIElements();
+  if (state.inlineEditingId && typeof closeInlineEditor === 'function') closeInlineEditor(true);
+  await new Promise(r => setTimeout(r, 200));
+  try {
+    const bgColor = mapShell.style.background || '#E9B978';
+    const dataUrl = await htmlToImage.toPng(container, { quality: 0.95, pixelRatio: 2, backgroundColor: bgColor });
+    const link = document.createElement('a');
+    link.download = `mindmap_colored_${getDateString()}.png`;
+    link.href = dataUrl;
+    link.click();
+    setStatus("✅ PNG с цветным фоном сохранён!");
+  } catch (error) {
+    setStatus("❌ Ошибка: " + error.message, true);
+  } finally {
+    originalShadows.forEach(({ node, shadow }) => { node.style.boxShadow = shadow; });
+    showUIElements();
+    showLoading(false);
+    if (typeof render === 'function') render();
+  }
+}
+
+async function exportPNG_Transparent() {
+  const container = document.getElementById('mapShell');
+  if (!container) { alert("Контейнер не найден"); return; }
+  showLoading(true);
+  const allNodes = document.querySelectorAll('.node');
+  const originalShadows = [];
+  allNodes.forEach(node => {
+    originalShadows.push({ node, shadow: node.style.boxShadow });
+    node.style.boxShadow = 'none';
+  });
+  hideUIElements();
+  if (state.inlineEditingId && typeof closeInlineEditor === 'function') closeInlineEditor(true);
+  const originalContainerBg = container.style.background;
+  const originalBodyBg = document.body.style.background;
+  const originalHtmlBg = document.documentElement.style.background;
+  container.style.background = 'transparent';
+  document.body.style.background = 'transparent';
+  document.documentElement.style.background = 'transparent';
+  await new Promise(r => setTimeout(r, 200));
+  try {
+    const dataUrl = await htmlToImage.toPng(container, { quality: 0.95, pixelRatio: 2, backgroundColor: null });
+    const link = document.createElement('a');
+    link.download = `mindmap_transparent_${getDateString()}.png`;
+    link.href = dataUrl;
+    link.click();
+    setStatus("✅ PNG с прозрачным фоном сохранён!");
+  } catch (error) {
+    setStatus("❌ Ошибка: " + error.message, true);
+  } finally {
+    container.style.background = originalContainerBg;
+    document.body.style.background = originalBodyBg;
+    document.documentElement.style.background = originalHtmlBg;
+    originalShadows.forEach(({ node, shadow }) => { node.style.boxShadow = shadow; });
+    showUIElements();
+    showLoading(false);
+    if (typeof render === 'function') render();
+  }
+}
+
+async function exportPNGHQ_Colored() {
+  const container = document.getElementById('mapShell');
+  if (!container) { alert("Контейнер не найден"); return; }
+  showLoading(true);
+  const allNodes = document.querySelectorAll('.node');
+  const originalShadows = [];
+  allNodes.forEach(node => {
+    originalShadows.push({ node, shadow: node.style.boxShadow });
+    node.style.boxShadow = 'none';
+  });
+  hideUIElements();
+  if (state.inlineEditingId && typeof closeInlineEditor === 'function') closeInlineEditor(true);
+  await new Promise(r => setTimeout(r, 200));
+  try {
+    const bgColor = mapShell.style.background || '#E9B978';
+    const dataUrl = await htmlToImage.toPng(container, { quality: 1, pixelRatio: 5, backgroundColor: bgColor });
+    const link = document.createElement('a');
+    link.download = `mindmap_hq_colored_${getDateString()}.png`;
+    link.href = dataUrl;
+    link.click();
+    setStatus("✅ PNG HQ (цветной) сохранён!");
+  } catch (error) {
+    setStatus("❌ Ошибка: " + error.message, true);
+  } finally {
+    originalShadows.forEach(({ node, shadow }) => { node.style.boxShadow = shadow; });
+    showUIElements();
+    showLoading(false);
+    if (typeof render === 'function') render();
+  }
+}
+
+async function exportPNGHQ_Transparent() {
+  const container = document.getElementById('mapShell');
+  if (!container) { alert("Контейнер не найден"); return; }
+  showLoading(true);
+  const allNodes = document.querySelectorAll('.node');
+  const originalShadows = [];
+  allNodes.forEach(node => {
+    originalShadows.push({ node, shadow: node.style.boxShadow });
+    node.style.boxShadow = 'none';
+  });
+  hideUIElements();
+  if (state.inlineEditingId && typeof closeInlineEditor === 'function') closeInlineEditor(true);
+  const originalContainerBg = container.style.background;
+  const originalBodyBg = document.body.style.background;
+  const originalHtmlBg = document.documentElement.style.background;
+  container.style.background = 'transparent';
+  document.body.style.background = 'transparent';
+  document.documentElement.style.background = 'transparent';
+  await new Promise(r => setTimeout(r, 200));
+  try {
+    const dataUrl = await htmlToImage.toPng(container, { quality: 1, pixelRatio: 5, backgroundColor: null });
+    const link = document.createElement('a');
+    link.download = `mindmap_hq_transparent_${getDateString()}.png`;
+    link.href = dataUrl;
+    link.click();
+    setStatus("✅ PNG HQ (прозрачный) сохранён!");
+  } catch (error) {
+    setStatus("❌ Ошибка: " + error.message, true);
+  } finally {
+    container.style.background = originalContainerBg;
+    document.body.style.background = originalBodyBg;
+    document.documentElement.style.background = originalHtmlBg;
+    originalShadows.forEach(({ node, shadow }) => { node.style.boxShadow = shadow; });
+    showUIElements();
+    showLoading(false);
+    if (typeof render === 'function') render();
+  }
+}
+
+async function exportPDF() {
+  const container = document.getElementById('mapShell');
+  const stage = document.getElementById('mapStage');
+  if (!container) { alert("Контейнер не найден"); return; }
+  showLoading(true);
+  const allNodes = document.querySelectorAll('.node');
+  const originalShadows = [];
+  allNodes.forEach(node => {
+    originalShadows.push({ node, shadow: node.style.boxShadow });
+    node.style.boxShadow = 'none';
+  });
+  hideUIElements();
+  if (state.inlineEditingId && typeof closeInlineEditor === 'function') closeInlineEditor(true);
+  const originalOverflow = container.style.overflow;
+  const originalPosition = stage.style.position;
+  const originalPanX = state.panX;
+  const originalPanY = state.panY;
+  const originalScale = state.scale;
+  try {
+    state.panX = 0;
+    state.panY = 0;
+    state.scale = 1;
+    updateTransform();
+    container.style.overflow = 'visible';
+    stage.style.position = 'relative';
+    await new Promise(r => setTimeout(r, 150));
+    const nodes = document.querySelectorAll('.node');
+    const edgesSvg = document.getElementById('edges');
+    if (nodes.length === 0) throw new Error("Нет узлов для экспорта");
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    nodes.forEach(node => {
+      const left = parseFloat(node.style.left);
+      const top = parseFloat(node.style.top);
+      const width = node.offsetWidth;
+      const height = node.offsetHeight;
+      const nodeLeft = left - width / 2;
+      const nodeRight = left + width / 2;
+      const nodeTop = top - height / 2;
+      const nodeBottom = top + height / 2;
+      const padding = 30;
+      minX = Math.min(minX, nodeLeft - padding);
+      maxX = Math.max(maxX, nodeRight + padding);
+      minY = Math.min(minY, nodeTop - padding);
+      maxY = Math.max(maxY, nodeBottom + padding);
+    });
+    if (edgesSvg) {
+      const linePaths = edgesSvg.querySelectorAll('.line');
+      linePaths.forEach(line => {
+        const bbox = line.getBBox();
+        if (bbox.x !== undefined) {
+          minX = Math.min(minX, bbox.x - 20);
+          minY = Math.min(minY, bbox.y - 20);
+          maxX = Math.max(maxX, bbox.x + bbox.width + 20);
+          maxY = Math.max(maxY, bbox.y + bbox.height + 20);
+        }
+      });
+    }
+    const safePadding = 60;
+    const cropX = minX - safePadding;
+    const cropY = minY - safePadding;
+    const cropWidth = (maxX - minX) + safePadding * 2;
+    const cropHeight = (maxY - minY) + safePadding * 2;
+    const bgColor = mapShell.style.background || '#E9B978';
+    const canvas = await htmlToImage.toCanvas(container, {
+      pixelRatio: 3, backgroundColor: bgColor, quality: 1,
+      width: cropWidth, height: cropHeight,
+      style: { transform: `translate(${-cropX}px, ${-cropY}px)`, transformOrigin: 'top left' }
+    });
+    const { jsPDF } = window.jspdf;
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    const pdfWidth = 210;
+    let pdfHeight = (canvasHeight * pdfWidth) / canvasWidth;
+    const orientation = pdfHeight > 297 ? 'portrait' : 'landscape';
+    let finalPdfWidth, finalPdfHeight;
+    if (orientation === 'portrait') {
+      finalPdfWidth = 210;
+      finalPdfHeight = Math.min(pdfHeight, 297);
+      if (pdfHeight > 297) {
+        const scale = 297 / pdfHeight;
+        finalPdfWidth = pdfWidth * scale;
+        finalPdfHeight = 297;
+      }
+    } else {
+      finalPdfWidth = 297;
+      finalPdfHeight = (canvasHeight * 297) / canvasWidth;
+      if (finalPdfHeight > 210) {
+        const scale = 210 / finalPdfHeight;
+        finalPdfWidth = 297 * scale;
+        finalPdfHeight = 210;
+      }
+    }
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: orientation });
+    const imgData = canvas.toDataURL('image/jpeg', 0.98);
+    pdf.addImage(imgData, 'JPEG', 0, 0, finalPdfWidth, finalPdfHeight);
+    pdf.save(`mindmap_${getDateString()}.pdf`);
+    setStatus("✅ PDF сохранён!");
+  } catch (error) {
+    console.error('PDF ошибка:', error);
+    setStatus("❌ Ошибка PDF: " + error.message, true);
+  } finally {
+    originalShadows.forEach(({ node, shadow }) => { node.style.boxShadow = shadow; });
+    container.style.overflow = originalOverflow;
+    stage.style.position = originalPosition;
+    state.panX = originalPanX;
+    state.panY = originalPanY;
+    state.scale = originalScale;
+    updateTransform();
+    showUIElements();
+    showLoading(false);
+    if (typeof render === 'function') render();
+  }
+}
+
+async function loadExportLibraries() {
+  if (typeof htmlToImage === 'undefined') {
+    await new Promise(resolve => {
+      const script = document.createElement('script');
+      script.src = "https://unpkg.com/html-to-image@1.11.11/dist/html-to-image.js";
+      script.onload = resolve;
+      document.head.appendChild(script);
+    });
+  }
+  if (typeof window.jspdf === 'undefined') {
+    await new Promise(resolve => {
+      const script = document.createElement('script');
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+      script.onload = resolve;
+      document.head.appendChild(script);
+    });
+  }
+}
+
 async function addExportButton() {
   await loadExportLibraries();
   const oldBtn = document.getElementById('exportContainer');
@@ -1778,51 +1850,19 @@ async function addExportButton() {
   btn.style.cssText = 'background:transparent;border:none;padding:12px 20px;color:white;font-size:15px;font-weight:600;cursor:pointer;';
   const dropdown = document.createElement('div');
   dropdown.style.cssText = 'position:absolute;top:100%;right:0;margin-top:8px;background:white;border-radius:16px;box-shadow:0 8px 25px rgba(0,0,0,0.15);min-width:240px;display:none;z-index:101;';
-
-
   dropdown.innerHTML = `
   <div style="padding:8px 0;">
-    <div class="export-item" data-type="png-colored" style="padding:12px 16px;cursor:pointer;color:#4C2213;">
-      <span>🎨</span> PNG (цветной фон)
-    </div>
-    <div class="export-item" data-type="png-transparent" style="padding:12px 16px;cursor:pointer;color:#4C2213;">
-      <span>🔲</span> PNG (прозрачный фон)
-    </div>
-    <div class="export-item" data-type="png-hq-colored" style="padding:12px 16px;cursor:pointer;color:#4C2213;">
-      <span>✨</span> PNG HQ (цветной фон, 5x)
-    </div>
-    <div class="export-item" data-type="png-hq-transparent" style="padding:12px 16px;cursor:pointer;color:#4C2213;">
-      <span>🔳</span> PNG HQ (прозрачный фон, 5x)
-    </div>
-    <div class="export-item" data-type="pdf" style="padding:12px 16px;cursor:pointer;color:#4C2213;">
-      <span>📄</span> PDF
-    </div>
-  </div>
-`;
-
- dropdown.querySelector('[data-type="png-colored"]').onclick = () => {
-  dropdown.style.display = 'none';
-  exportPNG_Colored();
-};
-dropdown.querySelector('[data-type="png-transparent"]').onclick = () => {
-  dropdown.style.display = 'none';
-  exportPNG_Transparent();
-};
-dropdown.querySelector('[data-type="png-hq-colored"]').onclick = () => {
-  dropdown.style.display = 'none';
-  exportPNGHQ_Colored();
-};
-dropdown.querySelector('[data-type="png-hq-transparent"]').onclick = () => {
-  dropdown.style.display = 'none';
-  exportPNGHQ_Transparent();
-};
-dropdown.querySelector('[data-type="pdf"]').onclick = () => {
-  dropdown.style.display = 'none';
-  exportPDF();
-};
-
-
-
+    <div class="export-item" data-type="png-colored" style="padding:12px 16px;cursor:pointer;color:#4C2213;"><span>🎨</span> PNG (цветной фон)</div>
+    <div class="export-item" data-type="png-transparent" style="padding:12px 16px;cursor:pointer;color:#4C2213;"><span>🔲</span> PNG (прозрачный фон)</div>
+    <div class="export-item" data-type="png-hq-colored" style="padding:12px 16px;cursor:pointer;color:#4C2213;"><span>✨</span> PNG HQ (цветной фон, 5x)</div>
+    <div class="export-item" data-type="png-hq-transparent" style="padding:12px 16px;cursor:pointer;color:#4C2213;"><span>🔳</span> PNG HQ (прозрачный фон, 5x)</div>
+    <div class="export-item" data-type="pdf" style="padding:12px 16px;cursor:pointer;color:#4C2213;"><span>📄</span> PDF</div>
+  </div>`;
+  dropdown.querySelector('[data-type="png-colored"]').onclick = () => { dropdown.style.display = 'none'; exportPNG_Colored(); };
+  dropdown.querySelector('[data-type="png-transparent"]').onclick = () => { dropdown.style.display = 'none'; exportPNG_Transparent(); };
+  dropdown.querySelector('[data-type="png-hq-colored"]').onclick = () => { dropdown.style.display = 'none'; exportPNGHQ_Colored(); };
+  dropdown.querySelector('[data-type="png-hq-transparent"]').onclick = () => { dropdown.style.display = 'none'; exportPNGHQ_Transparent(); };
+  dropdown.querySelector('[data-type="pdf"]').onclick = () => { dropdown.style.display = 'none'; exportPDF(); };
   dropdown.querySelectorAll('.export-item').forEach(item => {
     item.onmouseenter = () => item.style.background = '#F5DEB3';
     item.onmouseleave = () => item.style.background = 'transparent';
@@ -1855,6 +1895,33 @@ textFormatPopup.addEventListener("click", e => {
   const btn = e.target.closest("[data-format]");
   if (btn) applySelectionFormatting(btn.dataset.format);
 });
+
+// Обработчики для кнопок A+ и A-
+const fontSizeIncrease = document.getElementById("fontSizeIncrease");
+const fontSizeDecrease = document.getElementById("fontSizeDecrease");
+
+if (fontSizeIncrease) {
+  fontSizeIncrease.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    changeFontSize(2);
+  });
+}
+
+if (fontSizeDecrease) {
+  fontSizeDecrease.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    changeFontSize(-2);
+  });
+}
+
+// Кнопка добавления plain-текста
+const addPlainTextBtn = document.getElementById("addPlainTextBtn");
+if (addPlainTextBtn) {
+  addPlainTextBtn.addEventListener("click", addPlainTextAtViewportCenter);
+}
+
 zoomInBtn.addEventListener("click", () => zoomBy(1.16));
 zoomOutBtn.addEventListener("click", () => zoomBy(1 / 1.16));
 closeIntroBtn.addEventListener("click", closeIntro);
@@ -1885,6 +1952,26 @@ window.addEventListener("keydown", e => {
   if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") return;
   if (e.key === "+" || e.key === "=" || e.code === "NumpadAdd") { e.preventDefault(); zoomBy(1.16); }
   if (e.key === "-" || e.code === "NumpadSubtract") { e.preventDefault(); zoomBy(1 / 1.16); }
+  // Горячие клавиши для изменения размера шрифта
+  if ((e.ctrlKey || e.metaKey) && e.key === "+") {
+    e.preventDefault();
+    changeFontSize(2);
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === "-") {
+    e.preventDefault();
+    changeFontSize(-2);
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === "0") {
+    e.preventDefault();
+    if (state.selectedIds.size) {
+      state.selectedIds.forEach(id => {
+        const node = state.nodes.get(id);
+        if (node) setFontSize(node, 14);
+      });
+      render();
+      setStatus("Размер шрифта сброшен до 14pt.");
+    }
+  }
 });
 
 sourceInput.value = `@MAIN| Подготовка запуска проекта
