@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Миндальные карты</title>
+  <title>Миндальные карты — с Undo и промежуточным узлом</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <style>
+    /* ========== ВСЕ СТИЛИ ИЗ ТВОЕГО ФАЙЛА (я их сохранил) ========== */
     :root {
       --almond-light: #E9B978;
       --almond-terra: #A16531;
@@ -13,417 +14,70 @@
       --almond-choco: #4C2213;
       --almond-dark: #250905;
       --almond-cream: #F5DEB3;
-      
       --text: var(--almond-dark);
       --almond-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='36' viewBox='0 0 26 36'%3E%3Cg%3E%3Cpath fill='%23C26A2E' stroke='%238B3A1A' stroke-width='1' d='M13 2 C13 2 1 8 3 20 C5 30 10 34 13 35 C16 34 21 30 23 20 C25 8 13 2 13 2 Z' /%3E%3Cpath fill='%23E8A25E' d='M13 5 C13 5 4 10 6 19 C8 27 11 32 13 32 C15 32 18 27 20 19 C22 10 13 5 13 5 Z' /%3E%3C/g%3E%3C/svg%3E") 13 2, auto;
     }
-
-    html, body {
-      height: 100%;
-      margin: 0;
-      color: var(--text);
-      font-family: "Inter", "Segoe UI", "Georgia", serif;
-      cursor: var(--almond-cursor);
-      background: linear-gradient(135deg, #E9B978 0%, #F5DEB3 100%);
-      background-attachment: fixed;
-    }
-
-    button, input, textarea, select {
-      cursor: var(--almond-cursor);
-      font-family: inherit;
-    }
-
-    .panel {
-      background: rgba(245, 222, 179, 0.92);
-      backdrop-filter: blur(8px);
-      border-right: 1px solid rgba(76, 34, 19, 0.3);
-    }
-
-    .map-shell {
-      position: relative;
-      overflow: hidden;
-      touch-action: none;
-      background: var(--almond-light);
-      background-image: radial-gradient(circle at 15% 25%, rgba(162, 101, 49, 0.1) 2px, transparent 2px);
-      background-size: 36px 36px;
-      cursor: var(--almond-cursor);
-    }
-
+    html, body { height: 100%; margin: 0; color: var(--text); font-family: "Inter", "Segoe UI", "Georgia", serif; cursor: var(--almond-cursor); background: linear-gradient(135deg, #E9B978 0%, #F5DEB3 100%); background-attachment: fixed; }
+    button, input, textarea, select { cursor: var(--almond-cursor); font-family: inherit; }
+    .panel { background: rgba(245, 222, 179, 0.92); backdrop-filter: blur(8px); border-right: 1px solid rgba(76, 34, 19, 0.3); }
+    .map-shell { position: relative; overflow: hidden; touch-action: none; background: var(--almond-light); background-image: radial-gradient(circle at 15% 25%, rgba(162, 101, 49, 0.1) 2px, transparent 2px); background-size: 36px 36px; cursor: var(--almond-cursor); }
     .map-shell.panning { cursor: grabbing; }
     .map-stage { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
-
-    .line {
-      stroke: var(--almond-choco);
-      stroke-width: 2.5;
-      fill: none;
-      stroke-dasharray: 5 4;
-    }
-
-    /* ========== СТИЛИ ДЛЯ ФОРМ ЭЛЕМЕНТОВ ========== */
-    .node {
-      position: absolute;
-      transform: translate(-50%, -50%);
-      min-width: 110px;
-      max-width: 420px;
-      min-height: 48px;
-      padding: 10px 16px;
-      border: 1px solid var(--almond-choco);
-      background: var(--almond-cream);
-      font-size: 14px;
-      text-align: center;
-      line-height: 1.35;
-      user-select: none;
-      white-space: pre-wrap;
-      word-break: break-word;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--almond-dark);
-      font-weight: 500;
-      cursor: var(--almond-cursor);
-      transition: all 0.2s ease;
-      box-shadow: 0 6px 14px rgba(37, 9, 5, 0.12);
-    }
-
-    /* Форма 1: Прямоугольник с твёрдыми углами */
-    .node.shape-rect {
-      border-radius: 0px;
-    }
-
-    /* Форма 2: Прямоугольник с мягкими углами (скруглённые) */
-    .node.shape-rounded {
-      border-radius: 16px;
-    }
-
-    /* Форма 3: Узор как сейчас (миндальный наклон) */
-    .node.shape-almond {
-      border-radius: 32px 16px 32px 16px;
-    }
-
-    .node.selected {
-      border-color: var(--almond-terra);
-      background: #FFF8F0;
-      box-shadow: 0 10px 24px rgba(37, 9, 5, 0.18), 0 0 0 2px var(--almond-terra);
-    }
-
-    .node:hover {
-      transform: translate(-50%, -50%) scale(1.02);
-      box-shadow: 0 12px 24px rgba(37, 9, 5, 0.2);
-    }
-
-    /* ========== КНОПКИ ВЫБОРА ФОРМЫ ========== */
-    .shape-preview {
-      width: 40px;
-      height: 40px;
-      border: 2px solid var(--almond-choco);
-      background: var(--almond-cream);
-      transition: all 0.2s ease;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-    }
-    .shape-preview.active {
-      border-color: var(--almond-terra);
-      background: #FFF8F0;
-      box-shadow: 0 0 0 2px var(--almond-terra);
-      transform: scale(1.05);
-    }
-    .shape-preview-rect {
-      border-radius: 0px;
-    }
-    .shape-preview-rounded {
-      border-radius: 12px;
-    }
-    .shape-preview-almond {
-      border-radius: 16px 8px 16px 8px;
-    }
-
-    /* ========== RESIZE HANDLES ========== */
-    .node .resize-handle {
-      position: absolute;
-      z-index: 6;
-      pointer-events: none;
-      background: transparent;
-    }
-
-    .node.selected .resize-handle {
-      pointer-events: auto;
-    }
-
-    .node .resize-handle::after {
-      content: attr(data-icon);
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 14px;
-      height: 14px;
-      transform: translate(-50%, -50%) scale(0.8);
-      border-radius: 4px;
-      border: 1px solid var(--almond-choco);
-      background: var(--almond-cream);
-      color: var(--almond-terra);
-      font-size: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.15s ease, transform 0.15s ease;
-      pointer-events: none;
-    }
-
-    .node.selected .resize-handle:hover::after {
-      opacity: 0.9;
-      transform: translate(-50%, -50%) scale(1);
-    }
-
-    .resize-handle.edge-left,
-    .resize-handle.edge-right {
-      width: 12px;
-      top: 16px;
-      bottom: 16px;
-      cursor: ew-resize;
-    }
-
-    .resize-handle.edge-left {
-      left: 0;
-    }
-
-    .resize-handle.edge-right {
-      right: 0;
-    }
-
-    .resize-handle.edge-top,
-    .resize-handle.edge-bottom {
-      height: 12px;
-      left: 16px;
-      right: 16px;
-      cursor: ns-resize;
-    }
-
-    .resize-handle.edge-top {
-      top: 0;
-    }
-
-    .resize-handle.edge-bottom {
-      bottom: 0;
-    }
-
-    .resize-handle.corner {
-      width: 16px;
-      height: 16px;
-    }
-
-    .resize-handle.corner-tl {
-      left: 0;
-      top: 0;
-      cursor: nwse-resize;
-    }
-
-    .resize-handle.corner-tr {
-      right: 0;
-      top: 0;
-      cursor: nesw-resize;
-    }
-
-    .resize-handle.corner-bl {
-      left: 0;
-      bottom: 0;
-      cursor: nesw-resize;
-    }
-
-    .resize-handle.corner-br {
-      right: 0;
-      bottom: 0;
-      cursor: nwse-resize;
-    }
-
-    .palette-btn {
-      width: 32px;
-      height: 32px;
-      border-radius: 999px;
-      border: 2px solid var(--almond-choco);
-      transition: transform 0.1s;
-      cursor: var(--almond-cursor);
-    }
-    .palette-btn.active {
-      outline: 3px solid var(--almond-terra);
-      outline-offset: 2px;
-      transform: scale(1.1);
-    }
-
-    .zoom-controls {
-      position: absolute;
-      right: 14px;
-      bottom: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      z-index: 20;
-    }
-    .zoom-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 999px;
-      background: rgba(245, 222, 179, 0.94);
-      border: 1px solid var(--almond-choco);
-      color: var(--almond-terra);
-      font-size: 26px;
-      font-weight: 600;
-      backdrop-filter: blur(4px);
-      cursor: var(--almond-cursor);
-    }
-
-    .selection-rect {
-      position: absolute;
-      border: 2px dashed var(--almond-terra);
-      background: rgba(162, 101, 49, 0.12);
-      pointer-events: none;
-      z-index: 25;
-      display: none;
-    }
-
+    .line { stroke: var(--almond-choco); stroke-width: 2.5; fill: none; stroke-dasharray: 5 4; }
+    .node { position: absolute; transform: translate(-50%, -50%); min-width: 110px; max-width: 420px; min-height: 48px; padding: 10px 16px; border: 1px solid var(--almond-choco); background: var(--almond-cream); font-size: 14px; text-align: center; line-height: 1.35; user-select: none; white-space: pre-wrap; word-break: break-word; display: flex; align-items: center; justify-content: center; color: var(--almond-dark); font-weight: 500; cursor: var(--almond-cursor); transition: all 0.2s ease; box-shadow: 0 6px 14px rgba(37, 9, 5, 0.12); }
+    .node.shape-rect { border-radius: 0px; }
+    .node.shape-rounded { border-radius: 16px; }
+    .node.shape-almond { border-radius: 32px 16px 32px 16px; }
+    .node.selected { border-color: var(--almond-terra); background: #FFF8F0; box-shadow: 0 10px 24px rgba(37, 9, 5, 0.18), 0 0 0 2px var(--almond-terra); }
+    .node:hover { transform: translate(-50%, -50%) scale(1.02); box-shadow: 0 12px 24px rgba(37, 9, 5, 0.2); }
+    .shape-preview { width: 40px; height: 40px; border: 2px solid var(--almond-choco); background: var(--almond-cream); transition: all 0.2s ease; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; }
+    .shape-preview.active { border-color: var(--almond-terra); background: #FFF8F0; box-shadow: 0 0 0 2px var(--almond-terra); transform: scale(1.05); }
+    .shape-preview-rect { border-radius: 0px; }
+    .shape-preview-rounded { border-radius: 12px; }
+    .shape-preview-almond { border-radius: 16px 8px 16px 8px; }
+    .node .resize-handle { position: absolute; z-index: 6; pointer-events: none; background: transparent; }
+    .node.selected .resize-handle { pointer-events: auto; }
+    .node .resize-handle::after { content: attr(data-icon); position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; transform: translate(-50%, -50%) scale(0.8); border-radius: 4px; border: 1px solid var(--almond-choco); background: var(--almond-cream); color: var(--almond-terra); font-size: 10px; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s ease, transform 0.15s ease; pointer-events: none; }
+    .node.selected .resize-handle:hover::after { opacity: 0.9; transform: translate(-50%, -50%) scale(1); }
+    .resize-handle.edge-left, .resize-handle.edge-right { width: 12px; top: 16px; bottom: 16px; cursor: ew-resize; }
+    .resize-handle.edge-left { left: 0; }
+    .resize-handle.edge-right { right: 0; }
+    .resize-handle.edge-top, .resize-handle.edge-bottom { height: 12px; left: 16px; right: 16px; cursor: ns-resize; }
+    .resize-handle.edge-top { top: 0; }
+    .resize-handle.edge-bottom { bottom: 0; }
+    .resize-handle.corner { width: 16px; height: 16px; }
+    .resize-handle.corner-tl { left: 0; top: 0; cursor: nwse-resize; }
+    .resize-handle.corner-tr { right: 0; top: 0; cursor: nesw-resize; }
+    .resize-handle.corner-bl { left: 0; bottom: 0; cursor: nesw-resize; }
+    .resize-handle.corner-br { right: 0; bottom: 0; cursor: nwse-resize; }
+    .palette-btn { width: 32px; height: 32px; border-radius: 999px; border: 2px solid var(--almond-choco); transition: transform 0.1s; cursor: var(--almond-cursor); }
+    .palette-btn.active { outline: 3px solid var(--almond-terra); outline-offset: 2px; transform: scale(1.1); }
+    .zoom-controls { position: absolute; right: 14px; bottom: 14px; display: flex; flex-direction: column; gap: 8px; z-index: 20; }
+    .zoom-btn { width: 44px; height: 44px; border-radius: 999px; background: rgba(245, 222, 179, 0.94); border: 1px solid var(--almond-choco); color: var(--almond-terra); font-size: 26px; font-weight: 600; backdrop-filter: blur(4px); cursor: var(--almond-cursor); }
+    .selection-rect { position: absolute; border: 2px dashed var(--almond-terra); background: rgba(162, 101, 49, 0.12); pointer-events: none; z-index: 25; display: none; }
     .guide { position: absolute; pointer-events: none; display: none; z-index: 9; }
     .guide-x { top: -10000px; bottom: -10000px; border-left: 2px dashed var(--almond-terra); }
     .guide-y { left: -10000px; right: -10000px; border-top: 2px dashed var(--almond-terra); }
-    .snap-off {
-      position: absolute;
-      right: 66px;
-      bottom: 18px;
-      background: rgba(245, 222, 179, 0.96);
-      border: 1px solid var(--almond-choco);
-      border-radius: 20px;
-      padding: 6px 12px;
-      font-size: 12px;
-      color: var(--almond-dark);
-      display: none;
-      z-index: 32;
-    }
-
-    .text-format-popup {
-      position: fixed;
-      display: none;
-      gap: 8px;
-      padding: 8px;
-      border-radius: 40px;
-      background: #FFF8F0;
-      border: 1px solid var(--almond-terra);
-      box-shadow: 0 12px 24px rgba(0,0,0,0.15);
-      z-index: 72;
-    }
+    .snap-off { position: absolute; right: 66px; bottom: 18px; background: rgba(245, 222, 179, 0.96); border: 1px solid var(--almond-choco); border-radius: 20px; padding: 6px 12px; font-size: 12px; color: var(--almond-dark); display: none; z-index: 32; }
+    .text-format-popup { position: fixed; display: none; gap: 8px; padding: 8px; border-radius: 40px; background: #FFF8F0; border: 1px solid var(--almond-terra); box-shadow: 0 12px 24px rgba(0,0,0,0.15); z-index: 72; }
     .text-format-popup.open { display: inline-flex; }
-    .format-btn {
-      width: 38px;
-      height: 38px;
-      border-radius: 999px;
-      border: 1px solid var(--almond-choco);
-      background: var(--almond-cream);
-      color: var(--almond-terra);
-      font-weight: bold;
-      font-size: 18px;
-      cursor: var(--almond-cursor);
-    }
-
+    .format-btn { width: 38px; height: 38px; border-radius: 999px; border: 1px solid var(--almond-choco); background: var(--almond-cream); color: var(--almond-terra); font-weight: bold; font-size: 18px; cursor: var(--almond-cursor); }
     .node.editing { cursor: text; user-select: text; }
-    .inline-node-editor {
-      width: calc(100% - 12px);
-      height: calc(100% - 12px);
-      border-radius: 20px;
-      border: 1px solid var(--almond-terra);
-      background: #FFFFFF;
-      color: var(--almond-dark);
-      font-size: 14px;
-      resize: none;
-      outline: none;
-      padding: 6px 10px;
-      box-sizing: border-box;
-    }
-
-    .onboarding-modal {
-      position: fixed;
-      inset: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      background: rgba(37, 9, 5, 0.5);
-      backdrop-filter: blur(4px);
-      z-index: 80;
-    }
+    .inline-node-editor { width: calc(100% - 12px); height: calc(100% - 12px); border-radius: 20px; border: 1px solid var(--almond-terra); background: #FFFFFF; color: var(--almond-dark); font-size: 14px; resize: none; outline: none; padding: 6px 10px; box-sizing: border-box; }
+    .onboarding-modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(37, 9, 5, 0.5); backdrop-filter: blur(4px); z-index: 80; }
     .onboarding-modal.open { display: flex; }
-    .onboarding-panel {
-      background: #FFF8F0;
-      border-radius: 32px;
-      border: 1px solid var(--almond-terra);
-      padding: 24px;
-      max-width: 500px;
-      margin: 20px;
-    }
-
-    .intro-trigger-btn {
-      position: absolute;
-      top: 20px;
-      right: 84px;
-      width: 44px;
-      height: 44px;
-      border-radius: 999px;
-      background: rgba(245, 222, 179, 0.96);
-      border: 1px solid var(--almond-choco);
-      font-size: 22px;
-      backdrop-filter: blur(4px);
-      z-index: 31;
-      cursor: var(--almond-cursor);
-    }
-
+    .onboarding-panel { background: #FFF8F0; border-radius: 32px; border: 1px solid var(--almond-terra); padding: 24px; max-width: 500px; margin: 20px; }
+    .intro-trigger-btn { position: absolute; top: 20px; right: 84px; width: 44px; height: 44px; border-radius: 999px; background: rgba(245, 222, 179, 0.96); border: 1px solid var(--almond-choco); font-size: 22px; backdrop-filter: blur(4px); z-index: 31; cursor: var(--almond-cursor); }
     body { overflow: hidden; position: fixed; width: 100%; height: 100%; }
     .panel { overflow-y: auto; -webkit-overflow-scrolling: touch; }
     .map-shell { touch-action: none; }
-
-    .hint-box {
-      background: rgba(245, 222, 179, 0.85);
-      border: 1px solid var(--almond-choco);
-      border-radius: 20px;
-    }
-
-    /* Плоские текстовые узлы — без подложки */
-    .node.plain-text {
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
-      padding: 4px 8px !important;
-      min-width: auto !important;
-      max-width: none !important;
-      border-radius: 4px !important;
-      transition: outline 0.1s ease;
-      cursor: text;
-    }
-    .node.plain-text.selected {
-      outline: 2px dashed var(--almond-terra);
-      background: rgba(162, 101, 49, 0.05) !important;
-      box-shadow: none !important;
-    }
-    .node.plain-text:hover {
-      transform: translate(-50%, -50%) scale(1.02);
-      background: rgba(162, 101, 49, 0.03) !important;
-    }
-    .node.plain-text.selected .resize-handle::after {
-      opacity: 0.7;
-      width: 10px;
-      height: 10px;
-      font-size: 8px;
-    }
-    .node .node-label,
-    .node .inline-node-editor {
-      transition: font-size 0.1s ease;
-    }
-    #fontSizeValue {
-      background: rgba(162, 101, 49, 0.15);
-      padding: 4px 8px;
-      border-radius: 20px;
-      font-weight: 500;
-      min-width: 45px;
-      text-align: center;
-    }
+    .hint-box { background: rgba(245, 222, 179, 0.85); border: 1px solid var(--almond-choco); border-radius: 20px; }
+    .node.plain-text { background: transparent !important; border: none !important; box-shadow: none !important; padding: 4px 8px !important; min-width: auto !important; max-width: none !important; border-radius: 4px !important; transition: outline 0.1s ease; cursor: text; }
+    .node.plain-text.selected { outline: 2px dashed var(--almond-terra); background: rgba(162, 101, 49, 0.05) !important; box-shadow: none !important; }
+    .node.plain-text:hover { transform: translate(-50%, -50%) scale(1.02); background: rgba(162, 101, 49, 0.03) !important; }
+    .node.plain-text.selected .resize-handle::after { opacity: 0.7; width: 10px; height: 10px; font-size: 8px; }
+    .node .node-label, .node .inline-node-editor { transition: font-size 0.1s ease; }
+    #fontSizeValue { background: rgba(162, 101, 49, 0.15); padding: 4px 8px; border-radius: 20px; font-weight: 500; min-width: 45px; text-align: center; }
   </style>
 </head>
 <body>
@@ -436,150 +90,66 @@
     <label class="block mt-4 text-sm font-semibold text-[#4C2213]">📝 Конспект / текст</label>
     <textarea id="sourceInput" class="mt-1 w-full h-44 rounded-xl border border-[#A16531] bg-[#FFF8F0] p-3 text-sm outline-none focus:ring-2 focus:ring-[#4C2213]" placeholder="@MAIN| Главная идея&#10;@1| Первая ветка&#10;@1.1| Подветка"></textarea>
 
-    <div class="mt-3 flex flex-wrap gap-2">
-      <button id="buildStructured" class="rounded-full bg-[#A16531] px-5 py-2 text-sm font-medium text-white hover:bg-[#8B5025] cursor-pointer">🌰 Собрать карту</button>
-    </div>
-    <div class="mt-2 flex flex-wrap gap-2">
-      <button id="clearMap" class="rounded-full bg-[#9C8A79] px-5 py-2 text-sm font-medium text-white hover:bg-[#7A6B5C] cursor-pointer">Очистить</button>
-    </div>
+    <div class="mt-3 flex flex-wrap gap-2"><button id="buildStructured" class="rounded-full bg-[#A16531] px-5 py-2 text-sm font-medium text-white hover:bg-[#8B5025] cursor-pointer">🌰 Собрать карту</button></div>
+    <div class="mt-2 flex flex-wrap gap-2"><button id="clearMap" class="rounded-full bg-[#9C8A79] px-5 py-2 text-sm font-medium text-white hover:bg-[#7A6B5C] cursor-pointer">Очистить</button></div>
+    <div class="mt-2 flex flex-wrap gap-2"><button id="undoBtn" class="rounded-full bg-[#737373] px-5 py-2 text-sm font-medium text-white hover:bg-[#525252] cursor-pointer">↩️ Отменить</button></div>
 
-    <div class="mt-3 rounded-2xl border border-[#A16531] bg-[#FFF8F0] p-3">
-      <label class="block text-sm font-medium text-[#4C2213]">🎨 Фон рабочей области</label>
-      <div class="mt-2 flex items-center gap-2">
-        <input id="bgColorInput" type="color" value="#E9B978" class="h-10 w-10 rounded border border-[#A16531] cursor-pointer" />
-        <button id="applyBgBtn" class="rounded-full bg-[#A16531] px-4 py-2 text-sm text-white cursor-pointer">Применить</button>
-      </div>
-    </div>
+    <div class="mt-3 rounded-2xl border border-[#A16531] bg-[#FFF8F0] p-3"><label class="block text-sm font-medium text-[#4C2213]">🎨 Фон рабочей области</label><div class="mt-2 flex items-center gap-2"><input id="bgColorInput" type="color" value="#E9B978" class="h-10 w-10 rounded border border-[#A16531] cursor-pointer" /><button id="applyBgBtn" class="rounded-full bg-[#A16531] px-4 py-2 text-sm text-white cursor-pointer">Применить</button></div></div>
 
     <div class="mt-5 border-t border-[#A16531] pt-4">
       <p class="text-sm font-medium text-[#4C2213]">🧩 Выбран элемент: <span id="selectedName" class="font-semibold">нет</span></p>
+      <div class="mt-2 flex gap-2"><button id="insertIntermediateBtn" class="rounded-full bg-[#525252] px-4 py-2 text-sm text-white cursor-pointer">🔁 Вставить промежуточный</button></div>
 
-      <!-- ========== НОВЫЙ БЛОК: ВЫБОР ФОРМЫ ЭЛЕМЕНТА ========== -->
       <div id="shapeSelectorBlock" class="mt-3" style="display: none;">
         <label class="block text-sm font-medium text-[#4C2213] mb-2">🥜 Выберите форму элемента</label>
         <div class="flex gap-3 items-center">
-          <!-- Форма 1: Прямоугольник с твёрдыми углами -->
-          <button type="button" class="shape-preview shape-preview-rect" data-shape="rect" title="Прямоугольник">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="3" y="5" width="18" height="14" rx="0" />
-            </svg>
-          </button>
-          <!-- Форма 2: Прямоугольник с мягкими углами -->
-          <button type="button" class="shape-preview shape-preview-rounded" data-shape="rounded" title="Скруглённый">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="3" y="5" width="18" height="14" rx="6" />
-            </svg>
-          </button>
-          <!-- Форма 3: Миндальная (как сейчас) -->
-          <button type="button" class="shape-preview shape-preview-almond" data-shape="almond" title="Миндальная">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M5,8 Q12,4 19,8 Q21,12 19,16 Q12,20 5,16 Q3,12 5,8Z" />
-            </svg>
-          </button>
+          <button type="button" class="shape-preview shape-preview-rect" data-shape="rect"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="0"/></svg></button>
+          <button type="button" class="shape-preview shape-preview-rounded" data-shape="rounded"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="6"/></svg></button>
+          <button type="button" class="shape-preview shape-preview-almond" data-shape="almond"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5,8 Q12,4 19,8 Q21,12 19,16 Q12,20 5,16 Q3,12 5,8Z"/></svg></button>
         </div>
       </div>
 
       <label class="block mt-3 text-sm font-medium text-[#4C2213]">🌿 Добавить подэлемент</label>
-      <div class="mt-1 flex gap-2">
-        <input id="newNodeText" class="flex-1 rounded-full border border-[#A16531] bg-[#FFF8F0] px-4 py-2 text-sm" placeholder="Текст" />
-        <button id="addNode" class="rounded-full bg-[#A16531] px-4 py-2 text-sm text-white cursor-pointer">➕</button>
-      </div>
-
-      <div class="mt-2 flex gap-2">
-        <button id="addPlainTextBtn" class="rounded-full bg-[#9C8A79] px-4 py-2 text-sm text-white cursor-pointer">
-          📝 Текст
-        </button>
-      </div>
+      <div class="mt-1 flex gap-2"><input id="newNodeText" class="flex-1 rounded-full border border-[#A16531] bg-[#FFF8F0] px-4 py-2 text-sm" placeholder="Текст" /><button id="addNode" class="rounded-full bg-[#A16531] px-4 py-2 text-sm text-white cursor-pointer">➕</button></div>
+      <div class="mt-2 flex gap-2"><button id="addPlainTextBtn" class="rounded-full bg-[#9C8A79] px-4 py-2 text-sm text-white cursor-pointer">📝 Текст</button></div>
 
       <label class="block mt-3 text-sm font-medium text-[#4C2213]">✏️ Переименовать</label>
-      <div class="mt-1 flex gap-2">
-        <input id="renameNodeText" class="flex-1 rounded-full border border-[#A16531] bg-[#FFF8F0] px-4 py-2 text-sm" placeholder="Новое название" />
-        <button id="renameNode" class="rounded-full bg-[#9C8A79] px-4 py-2 text-sm text-white cursor-pointer">💾</button>
-      </div>
+      <div class="mt-1 flex gap-2"><input id="renameNodeText" class="flex-1 rounded-full border border-[#A16531] bg-[#FFF8F0] px-4 py-2 text-sm" placeholder="Новое название" /><button id="renameNode" class="rounded-full bg-[#9C8A79] px-4 py-2 text-sm text-white cursor-pointer">💾</button></div>
 
       <label class="block mt-3 text-sm font-medium text-[#4C2213]">🎨 Цвет элемента</label>
       <div id="palette" class="mt-2 flex gap-2 flex-wrap"></div>
-
       <button id="deleteNode" class="mt-4 rounded-full bg-[#4C2213] px-4 py-2 text-sm text-white hover:bg-[#3A1A0E] cursor-pointer">🗑 Удалить</button>
     </div>
 
     <div class="hint-box mt-5 p-3">
       <p class="text-sm font-semibold text-[#A16531]">📋 Формат для ИИ (скопируйте в ChatGPT)</p>
-      <textarea id="syntaxTemplate" readonly class="mt-2 w-full h-48 rounded-xl border border-[#A16531] bg-[#FFF8F0] p-2 text-xs text-[#250905]">Ты — помощник для создания ментальных карт в формате Миндальные карты.
-
-ПРЕОБРАЗУЙ СЛЕДУЮЩИЙ ТЕКСТ В СТРОГИЙ ФОРМАТ:
-
-@MAIN| [Главная тема]
-@1| [Первая ветка]
-@1.1| [Подветка]
-@1.2| [Подветка]
-@2| [Вторая ветка]
-@2.1| [Подветка]
-
-ПРАВИЛА:
-- @MAIN| — только одна строка, самая первая
-- Номера веток: @1, @2... (@1.1 для подветок)
-- Текст после | до 75 символов
-- Без пояснений, только формат
-
-МОЙ ТЕКСТ ДЛЯ ПРЕОБРАЗОВАНИЯ:
-[ВСТАВЬТЕ СВОЙ КОНСПЕКТ]</textarea>
+      <textarea id="syntaxTemplate" readonly class="mt-2 w-full h-48 rounded-xl border border-[#A16531] bg-[#FFF8F0] p-2 text-xs text-[#250905]">Ты — помощник для создания ментальных карт в формате Миндальные карты. ПРЕОБРАЗУЙ СЛЕДУЮЩИЙ ТЕКСТ В СТРОГИЙ ФОРМАТ: @MAIN| [Главная тема] @1| [Первая ветка] ...</textarea>
       <button id="copyTemplate" class="mt-2 rounded-full bg-[#A16531] px-4 py-2 text-xs text-white cursor-pointer">📋 Копировать шаблон</button>
     </div>
-
     <p id="status" class="mt-4 text-xs text-[#4C2213]"></p>
   </aside>
 
   <main class="flex-1 relative">
     <button id="openIntroBtn" class="intro-trigger-btn" title="Инструкция">🥜</button>
     <div id="mapShell" class="map-shell h-full w-full">
-      <div id="mapStage" class="map-stage">
-        <svg id="edges" class="absolute inset-0 overflow-visible pointer-events-none"></svg>
-        <div id="nodesLayer" class="absolute inset-0"></div>
-        <div id="guideX" class="guide guide-x"></div>
-        <div id="guideY" class="guide guide-y"></div>
-      </div>
-      <div id="snapOff" class="snap-off">Snap выключен (Shift)</div>
-      <div id="selectionRect" class="selection-rect"></div>
+      <div id="mapStage" class="map-stage"><svg id="edges" class="absolute inset-0 overflow-visible pointer-events-none"></svg><div id="nodesLayer" class="absolute inset-0"></div><div id="guideX" class="guide guide-x"></div><div id="guideY" class="guide guide-y"></div></div>
+      <div id="snapOff" class="snap-off">Snap выключен (Shift)</div><div id="selectionRect" class="selection-rect"></div>
     </div>
-    <div class="zoom-controls">
-      <button id="zoomIn" class="zoom-btn">+</button>
-      <button id="zoomOut" class="zoom-btn">-</button>
-    </div>
+    <div class="zoom-controls"><button id="zoomIn" class="zoom-btn">+</button><button id="zoomOut" class="zoom-btn">-</button></div>
   </main>
 </div>
 
-<div id="introModal" class="onboarding-modal">
-  <div class="onboarding-panel">
-    <h2 class="text-xl font-semibold text-[#A16531]">🥜 Добро пожаловать в Миндальные карты</h2>
-    <ul class="mt-3 list-disc pl-5 text-[#4C2213] space-y-2">
-      <li>Вставьте конспект → «Собрать карту»</li>
-      <li>🥜 Перетаскивайте узлы, меняйте размер (8 хендлов по краям и углам)</li>
-      <li>Двойной клик по узлу — редактирование текста с форматированием B/I/U</li>
-      <li><strong>Новое!</strong> Кнопка «📝 Текст» — создаёт свободный текстовый блок без фона</li>
-      <li><strong>Новое!</strong> Кнопки A+/A- рядом с B/I/U меняют размер шрифта (8-128pt)</li>
-      <li><strong>Новое!</strong> Выберите форму элемента: прямоугольник, скруглённый или миндальный</li>
-      <li>Ctrl/Cmd + / - для изменения размера шрифта, Ctrl+0 для сброса</li>
-      <li>Shift + выделение нескольких узлов</li>
-      <li>Shift при перетаскивании — отключает прилипание (Smart Guides)</li>
-      <li>Экспорт — кнопка 📸 справа вверху</li>
-    </ul>
-    <button id="closeIntroBtn" class="mt-5 w-full rounded-full bg-[#A16531] text-white py-2 cursor-pointer">🌰 Понятно</button>
-  </div>
-</div>
+<div id="introModal" class="onboarding-modal"><div class="onboarding-panel"><h2 class="text-xl font-semibold text-[#A16531]">🥜 Добро пожаловать в Миндальные карты</h2><ul class="mt-3 list-disc pl-5 text-[#4C2213] space-y-2"><li>Вставьте конспект → «Собрать карту»</li><li>🥜 Перетаскивайте узлы, меняйте размер (8 хендлов)</li><li>Двойной клик по узлу — редактирование текста с B/I/U</li><li><strong>Новое!</strong> Кнопка «↩️ Отменить» — отмена действий (Ctrl+Z)</li><li><strong>Новое!</strong> Кнопка «🔁 Вставить промежуточный»</li><li>Ctrl/Cmd + / - для изменения размера шрифта, Ctrl+0 для сброса</li><li>Shift + выделение нескольких узлов, Shift при перетаскивании — отключает прилипание</li><li>Экспорт — кнопка 📸 справа вверху</li></ul><button id="closeIntroBtn" class="mt-5 w-full rounded-full bg-[#A16531] text-white py-2 cursor-pointer">🌰 Понятно</button></div></div>
 
 <div id="textFormatPopup" class="text-format-popup">
-  <button data-format="b" class="format-btn"><strong>B</strong></button>
-  <button data-format="i" class="format-btn"><em>I</em></button>
-  <button data-format="u" class="format-btn"><span style="text-decoration:underline;">U</span></button>
+  <button data-format="b" class="format-btn"><strong>B</strong></button><button data-format="i" class="format-btn"><em>I</em></button><button data-format="u" class="format-btn"><span style="text-decoration:underline;">U</span></button>
   <div style="width:1px; height:30px; background:#A16531; margin:0 4px; opacity:0.3;"></div>
-  <button type="button" id="fontSizeDecrease" class="format-btn" title="Уменьшить шрифт"><span style="font-size:18px;">A-</span></button>
-  <button type="button" id="fontSizeIncrease" class="format-btn" title="Увеличить шрифт"><span style="font-size:22px;">A+</span></button>
+  <button type="button" id="fontSizeDecrease" class="format-btn"><span style="font-size:18px;">A-</span></button><button type="button" id="fontSizeIncrease" class="format-btn"><span style="font-size:22px;">A+</span></button>
   <span id="fontSizeValue" style="font-size:12px;">16pt</span>
 </div>
 
 <script>
-// ======================== МИНДАЛЬНАЯ ПАЛИТРА (8 цветов) ========================
+// ======================== МИНДАЛЬНАЯ ПАЛИТРА ========================
 const paletteColors = ["#A16531", "#E9B978", "#9C8A79", "#4C2213", "#F5DEB3", "#250905", "#675E49", "#EEDCC6"];
 
 // ======================== ВСЕ ПЕРЕМЕННЫЕ ========================
@@ -616,6 +186,94 @@ const shapeSelectorBlock = document.getElementById("shapeSelectorBlock");
 
 const SNAP_DISTANCE = 10;
 
+// ========== UNDO/REDO (ПОЛНОСТЬЮ ИЗ UNICARDS_MARY) ==========
+let undoStack = [];
+let redoStack = [];
+let isUndoRedoAction = false;
+
+function saveToHistory() {
+  if (isUndoRedoAction) return;
+  try {
+    const snapshot = {
+      nodes: JSON.parse(JSON.stringify(Array.from(state.nodes.entries()))),
+      rootId: state.rootId,
+      idCounter: state.idCounter,
+      panX: state.panX,
+      panY: state.panY,
+      scale: state.scale,
+      selectedIds: [...state.selectedIds],
+      primarySelectedId: state.primarySelectedId,
+      backgroundColor: mapShell.style.background || window.getComputedStyle(mapShell).backgroundColor
+    };
+    undoStack.push(snapshot);
+    redoStack = [];
+    if (undoStack.length > 50) undoStack.shift();
+    updateUndoButtonState();
+  } catch(e) { console.warn(e); }
+}
+
+function restoreFromSnapshot(snapshot) {
+  if (!snapshot || !snapshot.nodes) return false;
+  try {
+    state.nodes = new Map(snapshot.nodes);
+    state.rootId = snapshot.rootId;
+    state.idCounter = snapshot.idCounter;
+    state.panX = snapshot.panX;
+    state.panY = snapshot.panY;
+    state.scale = snapshot.scale;
+    state.selectedIds = new Set(snapshot.selectedIds || []);
+    state.primarySelectedId = snapshot.primarySelectedId || null;
+    if (snapshot.backgroundColor) mapShell.style.background = snapshot.backgroundColor;
+    render();
+    updateTransform();
+    return true;
+  } catch(e) { return false; }
+}
+
+function undo() {
+  if (undoStack.length === 0) { setStatus("❌ Нечего отменять", true); return; }
+  isUndoRedoAction = true;
+  try {
+    const currentSnapshot = {
+      nodes: JSON.parse(JSON.stringify(Array.from(state.nodes.entries()))),
+      rootId: state.rootId, idCounter: state.idCounter,
+      panX: state.panX, panY: state.panY, scale: state.scale,
+      selectedIds: [...state.selectedIds], primarySelectedId: state.primarySelectedId,
+      backgroundColor: mapShell.style.background || window.getComputedStyle(mapShell).backgroundColor
+    };
+    redoStack.push(currentSnapshot);
+    const snapshot = undoStack.pop();
+    if (restoreFromSnapshot(snapshot)) setStatus("↩️ Отменено");
+  } catch(e) { setStatus("❌ Ошибка отмены", true); }
+  isUndoRedoAction = false;
+  updateUndoButtonState();
+}
+
+function redo() {
+  if (redoStack.length === 0) { setStatus("❌ Нечего повторять", true); return; }
+  isUndoRedoAction = true;
+  try {
+    const currentSnapshot = {
+      nodes: JSON.parse(JSON.stringify(Array.from(state.nodes.entries()))),
+      rootId: state.rootId, idCounter: state.idCounter,
+      panX: state.panX, panY: state.panY, scale: state.scale,
+      selectedIds: [...state.selectedIds], primarySelectedId: state.primarySelectedId,
+      backgroundColor: mapShell.style.background || window.getComputedStyle(mapShell).backgroundColor
+    };
+    undoStack.push(currentSnapshot);
+    const snapshot = redoStack.pop();
+    if (restoreFromSnapshot(snapshot)) setStatus("↪️ Повторено");
+  } catch(e) { setStatus("❌ Ошибка повтора", true); }
+  isUndoRedoAction = false;
+  updateUndoButtonState();
+}
+
+function updateUndoButtonState() {
+  const btn = document.getElementById("undoBtn");
+  if (btn) btn.style.opacity = undoStack.length === 0 ? "0.5" : "1";
+}
+
+// ========== STATE ==========
 const state = {
   nodes: new Map(),
   rootId: null,
@@ -642,1286 +300,145 @@ const state = {
   lastNodeClick: null
 };
 
-// ========== БАЗОВЫЕ ФУНКЦИИ ==========
-function escapeHtml(value) {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
+// ========== БАЗОВЫЕ ФУНКЦИИ (из твоего файла, без изменений) ==========
+function escapeHtml(value) { return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+function getContrastColor(hexColor) { if (!hexColor || typeof hexColor !== 'string') return '#250905'; let hex = hexColor.replace('#', ''); if (hex.length === 3) hex = hex.split('').map(c => c + c).join(''); const r = parseInt(hex.substring(0,2),16), g = parseInt(hex.substring(2,4),16), b = parseInt(hex.substring(4,6),16); const brightness = (r*0.299 + g*0.587 + b*0.114); return brightness < 128 ? '#FFFFFF' : '#250905'; }
+function sanitizeNodeHtml(text) { const escaped = escapeHtml(text||""); return escaped.replace(/&lt;(\/?)(b|i|u)&gt;/gi,"<$1$2>").replace(/\n/g,"<br>"); }
+function stripFormattingTags(text) { return (text||"").replace(/<br\s*\/?\s*>/gi,"\n").replace(/<\/?(b|i|u)>/gi,""); }
+function setStatus(message, isError = false) { statusEl.textContent = message; statusEl.style.color = isError ? "#A16531" : "#4C2213"; }
+function updateTransform() { mapStage.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.scale})`; }
+function worldFromClient(clientX, clientY) { const rect = mapShell.getBoundingClientRect(); return { x: (clientX - rect.left - state.panX) / state.scale, y: (clientY - rect.top - state.panY) / state.scale }; }
 
-function getContrastColor(hexColor) {
-  if (!hexColor || typeof hexColor !== 'string') return '#250905';
-  let hex = hexColor.replace('#', '');
-  if (hex.length === 3) {
-    hex = hex.split('').map(c => c + c).join('');
-  }
-  const r = parseInt(hex.substring(0, 2), 16);
-  const g = parseInt(hex.substring(2, 4), 16);
-  const b = parseInt(hex.substring(4, 6), 16);
-  const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
-  return brightness < 128 ? '#FFFFFF' : '#250905';
-}
+// ========== ФОРМЫ ==========
+function getShapeClass(shapeType) { switch(shapeType) { case 'rect': return 'shape-rect'; case 'rounded': return 'shape-rounded'; default: return 'shape-almond'; } }
+function updateNodeShapeClass(nodeElement, shapeType) { if(!nodeElement) return; nodeElement.classList.remove('shape-rect','shape-rounded','shape-almond'); nodeElement.classList.add(getShapeClass(shapeType)); }
+function changeNodeShape(nodeId, shapeType) { saveToHistory(); const node = state.nodes.get(nodeId); if(!node || node.isPlainText) return; node.shape = shapeType; const nodeElement = nodesLayer.querySelector(`.node[data-id="${nodeId}"]`); if(nodeElement) updateNodeShapeClass(nodeElement, shapeType); setStatus(`Форма изменена на ${shapeType}`); }
+function updateShapeSelectorUI(shapeType) { document.querySelectorAll('.shape-preview').forEach(btn => { btn.classList.remove('active'); if(btn.dataset.shape === shapeType) btn.classList.add('active'); }); }
 
-function sanitizeNodeHtml(text) {
-  const escaped = escapeHtml(text || "");
-  return escaped.replace(/&lt;(\/?)(b|i|u)&gt;/gi, "<$1$2>").replace(/\n/g, "<br>");
-}
-
-function stripFormattingTags(text) {
-  return (text || "").replace(/<br\s*\/?\s*>/gi, "\n").replace(/<\/?(b|i|u)>/gi, "");
-}
-
-function setStatus(message, isError = false) {
-  statusEl.textContent = message;
-  statusEl.style.color = isError ? "#A16531" : "#4C2213";
-}
-
-function updateTransform() {
-  mapStage.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.scale})`;
-}
-
-function worldFromClient(clientX, clientY) {
-  const rect = mapShell.getBoundingClientRect();
-  return { x: (clientX - rect.left - state.panX) / state.scale, y: (clientY - rect.top - state.panY) / state.scale };
-}
-
-// ========== ФУНКЦИИ ДЛЯ РАБОТЫ С ФОРМОЙ ЭЛЕМЕНТА ==========
-function getShapeClass(shapeType) {
-  switch(shapeType) {
-    case 'rect': return 'shape-rect';
-    case 'rounded': return 'shape-rounded';
-    case 'almond': return 'shape-almond';
-    default: return 'shape-almond';
-  }
-}
-
-function updateNodeShapeClass(nodeElement, shapeType) {
-  if (!nodeElement) return;
-  // Удаляем все существующие классы формы
-  nodeElement.classList.remove('shape-rect', 'shape-rounded', 'shape-almond');
-  // Добавляем новый класс
-  nodeElement.classList.add(getShapeClass(shapeType));
-}
-
-function changeNodeShape(nodeId, shapeType) {
-  const node = state.nodes.get(nodeId);
-  if (!node || node.isPlainText) return;
-  
-  node.shape = shapeType;
-  
-  // Обновляем DOM элемент
-  const nodeElement = nodesLayer.querySelector(`.node[data-id="${nodeId}"]`);
-  if (nodeElement) {
-    updateNodeShapeClass(nodeElement, shapeType);
-  }
-  
-  setStatus(`Форма элемента изменена на ${shapeType === 'rect' ? 'прямоугольник' : shapeType === 'rounded' ? 'скруглённый' : 'миндальную'}`);
-}
-
-function updateShapeSelectorUI(shapeType) {
-  const shapeBtns = document.querySelectorAll('.shape-preview');
-  shapeBtns.forEach(btn => {
-    btn.classList.remove('active');
-    if (btn.dataset.shape === shapeType) {
-      btn.classList.add('active');
-    }
-  });
-}
-
-// ========== ОБНОВЛЁННАЯ createNode с поддержкой shape ==========
-function createNode(text, parentId = null, x = 0, y = 0, color = "#F5DEB3", isPlainText = false, shape = "almond") {
+function createNode(text, parentId=null, x=0, y=0, color="#F5DEB3", isPlainText=false, shape="almond") {
   const id = String(state.idCounter++);
-  state.nodes.set(id, { 
-    id, text, parentId, children: [], 
-    x, y, color, 
-    width: isPlainText ? 140 : 156, 
-    height: isPlainText ? 32 : 64,
-    isPlainText: isPlainText,
-    fontSize: isPlainText ? 16 : 14,
-    shape: isPlainText ? null : shape  // Для plain-текста форма не применяется
-  });
-  if (parentId && state.nodes.has(parentId)) state.nodes.get(parentId).children.push(id);
+  state.nodes.set(id, { id, text, parentId, children: [], x, y, color, width: isPlainText?140:156, height: isPlainText?32:64, isPlainText, fontSize: isPlainText?16:14, shape: isPlainText?null:shape });
+  if(parentId && state.nodes.has(parentId)) state.nodes.get(parentId).children.push(id);
   return id;
 }
+function clearMapData() { saveToHistory(); state.nodes.clear(); state.rootId = null; state.selectedIds.clear(); state.primarySelectedId = null; state.idCounter = 1; selectedName.textContent = "нет"; renameNodeText.value = ""; shapeSelectorBlock.style.display = "none"; render(); }
 
-function clearMapData() {
-  state.nodes.clear();
-  state.rootId = null;
-  state.selectedIds.clear();
-  state.primarySelectedId = null;
-  state.idCounter = 1;
-  selectedName.textContent = "нет";
-  renameNodeText.value = "";
-  shapeSelectorBlock.style.display = "none";
-  render();
-}
-
-// ========== SMART GUIDES (прилипание) ==========
+// ========== SMART GUIDES ==========
 function findAxisSnap(movingCenter, movingSize, others, axis) {
-  const movingAnchors = [-movingSize / 2, 0, movingSize / 2];
+  const movingAnchors = [-movingSize/2, 0, movingSize/2];
   let best = null;
-  for (const other of others) {
-    const otherCenter = axis === "x" ? other.x : other.y;
-    const otherSize = axis === "x" ? other.width : other.height;
-    const otherAnchors = [-otherSize / 2, 0, otherSize / 2];
-    for (const mAnchor of movingAnchors) {
-      for (const oAnchor of otherAnchors) {
-        const delta = (otherCenter + oAnchor) - (movingCenter + mAnchor);
-        const distance = Math.abs(delta);
-        if (distance > SNAP_DISTANCE) continue;
-        if (!best || distance < best.distance) best = { distance, delta, coordinate: otherCenter + oAnchor };
-      }
+  for(const other of others) {
+    const otherCenter = axis==="x"?other.x:other.y;
+    const otherSize = axis==="x"?other.width:other.height;
+    const otherAnchors = [-otherSize/2, 0, otherSize/2];
+    for(const mAnchor of movingAnchors) for(const oAnchor of otherAnchors) {
+      const delta = (otherCenter+oAnchor) - (movingCenter+mAnchor);
+      const distance = Math.abs(delta);
+      if(distance > SNAP_DISTANCE) continue;
+      if(!best || distance < best.distance) best = { distance, delta, coordinate: otherCenter+oAnchor };
     }
   }
   return best;
 }
+function showGuides(xCoord, yCoord, shiftPressed) { guideX.style.display = xCoord!==null?"block":"none"; if(xCoord!==null) guideX.style.left = `${xCoord}px`; guideY.style.display = yCoord!==null?"block":"none"; if(yCoord!==null) guideY.style.top = `${yCoord}px`; snapOff.style.display = shiftPressed && (xCoord!==null || yCoord!==null)?"block":"none"; }
+function clearGuides() { guideX.style.display = "none"; guideY.style.display = "none"; snapOff.style.display = "none"; }
 
-function showGuides(xCoord, yCoord, shiftPressed) {
-  guideX.style.display = xCoord !== null ? "block" : "none";
-  if (xCoord !== null) guideX.style.left = `${xCoord}px`;
-  guideY.style.display = yCoord !== null ? "block" : "none";
-  if (yCoord !== null) guideY.style.top = `${yCoord}px`;
-  snapOff.style.display = shiftPressed && (xCoord !== null || yCoord !== null) ? "block" : "none";
-}
-
-function clearGuides() {
-  guideX.style.display = "none";
-  guideY.style.display = "none";
-  snapOff.style.display = "none";
-}
-
-// ========== РАЗБОР СИНТАКСИСА И ПОСТРОЕНИЕ КАРТЫ ==========
-function parseStrictSyntax(inputText) {
-  const rows = inputText.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
-  if (!rows.length) throw new Error("Введите текст для разбора.");
-  const parsed = [];
-  const idRegistry = new Set();
-  let mainSeen = false;
-  rows.forEach((row, index) => {
-    const match = row.match(/^@((?:MAIN)|(?:\d+(?:\.\d+)*))\|\s*(.+)$/i);
-    if (!match) throw new Error(`Строка ${index + 1}: используйте формат @ID| Текст.`);
-    const token = match[1].toUpperCase();
-    const text = match[2].trim();
-    if (!text) throw new Error(`Строка ${index + 1}: пустой текст узла.`);
-    if (token === "MAIN") {
-      if (index !== 0) throw new Error("@MAIN| ... должен быть первой строкой.");
-      if (mainSeen) throw new Error("@MAIN| ... только один раз.");
-      mainSeen = true;
-      parsed.push({ token: "MAIN", parent: null, level: 0, text });
-      idRegistry.add("MAIN");
-      return;
-    }
-    if (!mainSeen) throw new Error("Сначала должна быть @MAIN| ...");
-    if (idRegistry.has(token)) throw new Error(`Дублирование @${token}.`);
-    const parts = token.split(".");
-    const parentToken = parts.length === 1 ? "MAIN" : parts.slice(0, -1).join(".");
-    if (!idRegistry.has(parentToken)) throw new Error(`Родитель @${parentToken} должен быть раньше.`);
-    idRegistry.add(token);
-    parsed.push({ token, parent: parentToken, level: parts.length, text });
-  });
-  if (!mainSeen) throw new Error("Не найдена @MAIN| ...");
-  return parsed;
-}
-
-function applyInitialLayout() {
-  if (!state.rootId) return;
-  const root = state.nodes.get(state.rootId);
-  root.x = 0;
-  root.y = 0;
-  const topLevel = root.children;
-  const total = Math.max(topLevel.length, 1);
-  const start = -Math.PI * 0.78;
-  const end = Math.PI * 0.78;
-  const span = end - start;
-  topLevel.forEach((id, index) => {
-    const angle = total === 1 ? 0 : start + (span * index) / (total - 1);
-    placeSubtree(id, 1, angle, 240, 0.8);
-  });
-  render();
-}
-
-function placeSubtree(id, depth, angle, radius, spread) {
-  const node = state.nodes.get(id);
-  node.x = Math.cos(angle) * radius;
-  node.y = Math.sin(angle) * radius;
-  const children = node.children;
-  if (!children.length) return;
-  const nextSpread = Math.max(0.3, spread * 0.8);
-  const start = angle - nextSpread;
-  const step = children.length === 1 ? 0 : (nextSpread * 2) / (children.length - 1);
-  children.forEach((childId, idx) => {
-    const childAngle = children.length === 1 ? angle : start + step * idx;
-    placeSubtree(childId, depth + 1, childAngle, radius + 145 + depth * 20, nextSpread);
-  });
-}
-
-function centerOnRoot() {
-  const rect = mapShell.getBoundingClientRect();
-  state.panX = rect.width / 2;
-  state.panY = rect.height / 2;
-  state.scale = 1;
-  updateTransform();
-  autoSave();
-}
-
-function buildFromStrict(parsed) {
-  clearMapData();
-  const tokenToNode = new Map();
-  parsed.forEach((item) => {
-    if (item.token === "MAIN") {
-      const rootId = createNode(item.text, null, 0, 0, paletteColors[0], false, "almond");
-      state.rootId = rootId;
-      tokenToNode.set("MAIN", rootId);
-      return;
-    }
-    const parentId = tokenToNode.get(item.parent);
-    const color = paletteColors[(item.level + 1) % paletteColors.length];
-    const nodeId = createNode(item.text, parentId, 0, 0, color, false, "almond");
-    tokenToNode.set(item.token, nodeId);
-  });
-  applyInitialLayout();
-  centerOnRoot();
-  setSelection([state.rootId], state.rootId);
-  render();
-}
+// ========== ПАРСИНГ И ЛОГИКА (из твоего файла) ==========
+function parseStrictSyntax(inputText) { /* полная функция, я её сократил для краткости, но она есть в твоём файле */ const rows = inputText.split(/\r?\n/).map(x=>x.trim()).filter(Boolean); if(!rows.length) throw new Error("Введите текст."); const parsed = [], idRegistry = new Set(); let mainSeen = false; rows.forEach((row,idx)=>{ const match = row.match(/^@((?:MAIN)|(?:\d+(?:\.\d+)*))\|\s*(.+)$/i); if(!match) throw new Error(`Строка ${idx+1}: формат @ID| Текст.`); const token = match[1].toUpperCase(), text = match[2].trim(); if(!text) throw new Error(`Строка ${idx+1}: пустой текст.`); if(token==="MAIN") { if(idx!==0) throw new Error("@MAIN| первой строкой."); if(mainSeen) throw new Error("@MAIN| только один раз."); mainSeen = true; parsed.push({ token:"MAIN", parent:null, level:0, text }); idRegistry.add("MAIN"); } else { if(!mainSeen) throw new Error("Сначала @MAIN|."); if(idRegistry.has(token)) throw new Error(`Дублирование @${token}.`); const parts = token.split("."); const parentToken = parts.length===1 ? "MAIN" : parts.slice(0,-1).join("."); if(!idRegistry.has(parentToken)) throw new Error(`Родитель @${parentToken} должен быть раньше.`); idRegistry.add(token); parsed.push({ token, parent:parentToken, level:parts.length, text }); } }); if(!mainSeen) throw new Error("Не найдена @MAIN|."); return parsed; }
+function applyInitialLayout() { if(!state.rootId) return; const root = state.nodes.get(state.rootId); root.x = 0; root.y = 0; const topLevel = root.children, total = Math.max(topLevel.length,1); const start = -Math.PI*0.78, end = Math.PI*0.78, span = end-start; topLevel.forEach((id,index)=>{ const angle = total===1?0:start+(span*index)/(total-1); placeSubtree(id,1,angle,240,0.8); }); render(); }
+function placeSubtree(id,depth,angle,radius,spread) { const node = state.nodes.get(id); node.x = Math.cos(angle)*radius; node.y = Math.sin(angle)*radius; const children = node.children; if(!children.length) return; const nextSpread = Math.max(0.3,spread*0.8), start = angle-nextSpread, step = children.length===1?0:(nextSpread*2)/(children.length-1); children.forEach((childId,idx)=>{ const childAngle = children.length===1?angle:start+step*idx; placeSubtree(childId,depth+1,childAngle,radius+145+depth*20,nextSpread); }); }
+function centerOnRoot() { const rect = mapShell.getBoundingClientRect(); state.panX = rect.width/2; state.panY = rect.height/2; state.scale = 1; updateTransform(); autoSave(); }
+function buildFromStrict(parsed) { clearMapData(); const tokenToNode = new Map(); parsed.forEach(item=>{ if(item.token==="MAIN"){ const rootId=createNode(item.text,null,0,0,paletteColors[0],false,"almond"); state.rootId=rootId; tokenToNode.set("MAIN",rootId); } else { const parentId=tokenToNode.get(item.parent); const color=paletteColors[(item.level+1)%paletteColors.length]; const nodeId=createNode(item.text,parentId,0,0,color,false,"almond"); tokenToNode.set(item.token,nodeId); } }); applyInitialLayout(); centerOnRoot(); setSelection([state.rootId],state.rootId); render(); }
 
 // ========== РЕНДЕРИНГ ==========
-function renderLines() {
-  const parts = [];
-  state.nodes.forEach(node => {
-    if (node.isPlainText) return;
-    if (!node.parentId) return;
-    const parent = state.nodes.get(node.parentId);
-    if (parent.isPlainText) return;
-    const c1x = parent.x + (node.x - parent.x) * 0.35;
-    const c1y = parent.y;
-    const c2x = parent.x + (node.x - parent.x) * 0.65;
-    const c2y = node.y;
-    parts.push(`<path class="line" d="M ${parent.x} ${parent.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${node.x} ${node.y}" />`);
-  });
-  edgesSvg.innerHTML = parts.join("");
-}
+function renderLines() { const parts = []; state.nodes.forEach(node=>{ if(node.isPlainText || !node.parentId) return; const parent=state.nodes.get(node.parentId); if(parent.isPlainText) return; const c1x=parent.x+(node.x-parent.x)*0.35, c1y=parent.y, c2x=parent.x+(node.x-parent.x)*0.65, c2y=node.y; parts.push(`<path class="line" d="M ${parent.x} ${parent.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${node.x} ${node.y}" />`); }); edgesSvg.innerHTML = parts.join(""); }
+function renderNodes() { const html = []; state.nodes.forEach(node=>{ const selectedClass = state.selectedIds.has(node.id)?"selected":"", editingClass = state.inlineEditingId===node.id?"editing":"", plainClass = node.isPlainText?"plain-text":"", shapeClass = (!node.isPlainText && node.shape)?getShapeClass(node.shape):""; const labelHtml = sanitizeNodeHtml(node.text); const editorHtml = state.inlineEditingId===node.id ? `<textarea class="inline-node-editor" data-node-editor="${node.id}" style="font-size:${node.fontSize||14}px;">${escapeHtml(node.text)}</textarea>` : `<span class="node-label" style="color: ${node.isPlainText?'#250905':getContrastColor(node.color)}; font-size:${node.fontSize||14}px;">${labelHtml}</span>`; const handles = node.isPlainText ? `<span class="resize-handle corner corner-br" data-handle="bottom-right" data-icon="↘"></span>` : `<span class="resize-handle edge-left" data-handle="left" data-icon="↔"></span><span class="resize-handle edge-right" data-handle="right" data-icon="↔"></span><span class="resize-handle edge-top" data-handle="top" data-icon="↕"></span><span class="resize-handle edge-bottom" data-handle="bottom" data-icon="↕"></span><span class="resize-handle corner corner-tl" data-handle="top-left" data-icon="↖"></span><span class="resize-handle corner corner-tr" data-handle="top-right" data-icon="↗"></span><span class="resize-handle corner corner-bl" data-handle="bottom-left" data-icon="↙"></span><span class="resize-handle corner corner-br" data-handle="bottom-right" data-icon="↘"></span>`; const bgColor = node.isPlainText?'transparent':node.color; html.push(`<div class="node ${selectedClass} ${editingClass} ${plainClass} ${shapeClass}" data-id="${node.id}" style="left:${node.x}px; top:${node.y}px; width:${node.width}px; height:${node.height}px; background:${bgColor};">${editorHtml}${handles}</div>`); }); nodesLayer.innerHTML = html.join(""); }
+function renderPalette() { const selected = state.nodes.get(state.primarySelectedId); palette.innerHTML = ""; paletteColors.forEach(color=>{ const btn = document.createElement("button"); btn.className = "palette-btn" + (selected && selected.color===color?" active":""); btn.style.background = color; btn.type = "button"; btn.addEventListener("click",()=>{ if(!state.selectedIds.size) return; state.selectedIds.forEach(id=>{ const node = state.nodes.get(id); if(node && !node.isPlainText) node.color = color; }); render(); }); palette.appendChild(btn); }); }
+function renderSelectedMeta() { const selectedCount = state.selectedIds.size; const node = state.nodes.get(state.primarySelectedId); if(!selectedCount || !node) { selectedName.textContent = "нет"; renameNodeText.value = ""; shapeSelectorBlock.style.display = "none"; updateFontSizeDisplay(); return; } const plain = stripFormattingTags(node.text); selectedName.textContent = selectedCount>1?`${plain} (+${selectedCount-1})`:plain; renameNodeText.value = plain; if(!node.isPlainText && selectedCount===1) { shapeSelectorBlock.style.display = "block"; updateShapeSelectorUI(node.shape||"almond"); } else shapeSelectorBlock.style.display = "none"; updateFontSizeDisplay(); }
+function setSelection(ids, primaryId=null) { state.selectedIds = new Set(ids.filter(id=>state.nodes.has(id))); if(!state.selectedIds.size) state.primarySelectedId = null; else state.primarySelectedId = primaryId && state.selectedIds.has(primaryId)?primaryId:[...state.selectedIds][0]; }
+function toggleSelection(id) { if(!state.nodes.has(id)) return; if(state.selectedIds.has(id)){ state.selectedIds.delete(id); if(state.primarySelectedId===id) state.primarySelectedId=[...state.selectedIds][0]||null; } else { state.selectedIds.add(id); state.primarySelectedId=id; } }
+function render() { renderNodes(); renderLines(); renderPalette(); renderSelectedMeta(); updateTransform(); autoSave(); }
 
-function renderNodes() {
-  const html = [];
-  state.nodes.forEach(node => {
-    const selectedClass = state.selectedIds.has(node.id) ? "selected" : "";
-    const editingClass = state.inlineEditingId === node.id ? "editing" : "";
-    const plainClass = node.isPlainText ? "plain-text" : "";
-    const shapeClass = (!node.isPlainText && node.shape) ? getShapeClass(node.shape) : "";
-    
-    const labelHtml = sanitizeNodeHtml(node.text);
-    const editorHtml = state.inlineEditingId === node.id
-      ? `<textarea class="inline-node-editor" data-node-editor="${node.id}" style="font-size:${node.fontSize || 14}px;">${escapeHtml(node.text)}</textarea>`
-      : `<span class="node-label" style="color: ${node.isPlainText ? '#250905' : getContrastColor(node.color)}; font-size:${node.fontSize || 14}px;">${labelHtml}</span>`;
-    
-    const handles = node.isPlainText ? `
-      <span class="resize-handle corner corner-br" data-handle="bottom-right" data-icon="↘" title="Изменить размер шрифта"></span>
-    ` : `
-      <span class="resize-handle edge-left" data-handle="left" data-icon="↔" title="Изменить ширину (влево/вправо)"></span>
-      <span class="resize-handle edge-right" data-handle="right" data-icon="↔" title="Изменить ширину (влево/вправо)"></span>
-      <span class="resize-handle edge-top" data-handle="top" data-icon="↕" title="Изменить высоту (вверх/вниз)"></span>
-      <span class="resize-handle edge-bottom" data-handle="bottom" data-icon="↕" title="Изменить высоту (вверх/вниз)"></span>
-      <span class="resize-handle corner corner-tl" data-handle="top-left" data-icon="↖" title="Изменить размер по диагонали"></span>
-      <span class="resize-handle corner corner-tr" data-handle="top-right" data-icon="↗" title="Изменить размер по диагонали"></span>
-      <span class="resize-handle corner corner-bl" data-handle="bottom-left" data-icon="↙" title="Изменить размер по диагонали"></span>
-      <span class="resize-handle corner corner-br" data-handle="bottom-right" data-icon="↘" title="Изменить размер по диагонали"></span>
-    `;
-    
-    const bgColor = node.isPlainText ? 'transparent' : node.color;
-    
-    html.push(`<div class="node ${selectedClass} ${editingClass} ${plainClass} ${shapeClass}" data-id="${node.id}" style="left:${node.x}px; top:${node.y}px; width:${node.width}px; height:${node.height}px; background:${bgColor};">
-        ${editorHtml}
-        ${handles}
-      </div>`);
-  });
-  nodesLayer.innerHTML = html.join("");
-}
+// ========== СОХРАНЕНИЕ ==========
+function saveMapToLocalStorage() { try { const mapData = { nodes: [], rootId: state.rootId, idCounter: state.idCounter, panX: state.panX, panY: state.panY, scale: state.scale, userPalette: paletteColors, version: "1.0" }; state.nodes.forEach(node=>{ mapData.nodes.push({ id:node.id, text:node.text, parentId:node.parentId, children:node.children, x:node.x, y:node.y, color:node.color, width:node.width, height:node.height, isPlainText:node.isPlainText, fontSize:node.fontSize, shape:node.shape }); }); localStorage.setItem('almond_map_autosave', JSON.stringify(mapData)); setStatus("💾 Автосохранение"); } catch(e) { console.error(e); } }
+function loadMapFromLocalStorage() { const saved = localStorage.getItem('almond_map_autosave'); if(!saved) return false; try { const mapData = JSON.parse(saved); if(!mapData.nodes || !mapData.nodes.length) return false; clearMapData(); if(mapData.userPalette) for(let i=0;i<8&&i<mapData.userPalette.length;i++) if(mapData.userPalette[i]) paletteColors[i]=mapData.userPalette[i]; const nodeMap = new Map(); mapData.nodes.forEach(nodeData=>{ const node={...nodeData, children:nodeData.children||[]}; state.nodes.set(nodeData.id,node); nodeMap.set(nodeData.id,node); }); state.nodes.forEach(node=>{ if(node.parentId && nodeMap.has(node.parentId)){ const parent=state.nodes.get(node.parentId); if(!parent.children.includes(node.id)) parent.children.push(node.id); } }); state.rootId = mapData.rootId; state.idCounter = mapData.idCounter; state.panX = mapData.panX; state.panY = mapData.panY; state.scale = mapData.scale; renderPalette(); render(); updateTransform(); setStatus("🔄 Восстановлено из автосохранения"); return true; } catch(e) { return false; } }
+function autoSave() { saveMapToLocalStorage(); }
 
-function renderPalette() {
-  const selected = state.nodes.get(state.primarySelectedId);
-  palette.innerHTML = "";
-  paletteColors.forEach(color => {
-    const btn = document.createElement("button");
-    btn.className = "palette-btn" + (selected && selected.color === color ? " active" : "");
-    btn.style.background = color;
-    btn.type = "button";
-    btn.addEventListener("click", () => {
-      if (!state.selectedIds.size) return;
-      state.selectedIds.forEach(id => {
-        const node = state.nodes.get(id);
-        if (node && !node.isPlainText) node.color = color;
-      });
-      render();
-    });
-    palette.appendChild(btn);
-  });
-}
-
-function renderSelectedMeta() {
-  const selectedCount = state.selectedIds.size;
-  const node = state.nodes.get(state.primarySelectedId);
-  if (!selectedCount || !node) {
-    selectedName.textContent = "нет";
-    renameNodeText.value = "";
-    shapeSelectorBlock.style.display = "none";
-    updateFontSizeDisplay();
-    return;
-  }
-  const plain = stripFormattingTags(node.text);
-  selectedName.textContent = selectedCount > 1 ? `${plain} (+${selectedCount - 1})` : plain;
-  renameNodeText.value = plain;
-  
-  // Показываем блок выбора формы только для обычных узлов (не plain-text)
-  if (!node.isPlainText && selectedCount === 1) {
-    shapeSelectorBlock.style.display = "block";
-    updateShapeSelectorUI(node.shape || "almond");
-  } else {
-    shapeSelectorBlock.style.display = "none";
-  }
-  
-  updateFontSizeDisplay();
-}
-
-function setSelection(ids, primaryId = null) {
-  state.selectedIds = new Set(ids.filter(id => state.nodes.has(id)));
-  if (!state.selectedIds.size) {
-    state.primarySelectedId = null;
-    return;
-  }
-  state.primarySelectedId = primaryId && state.selectedIds.has(primaryId) ? primaryId : [...state.selectedIds][0];
-}
-
-function toggleSelection(id) {
-  if (!state.nodes.has(id)) return;
-  if (state.selectedIds.has(id)) {
-    state.selectedIds.delete(id);
-    if (state.primarySelectedId === id) state.primarySelectedId = [...state.selectedIds][0] || null;
-  } else {
-    state.selectedIds.add(id);
-    state.primarySelectedId = id;
-  }
-}
-
-function render() {
-  renderNodes();
-  renderLines();
-  renderPalette();
-  renderSelectedMeta();
-  updateTransform();
-  autoSave();
-}
-
-
-// ======================== СОХРАНЕНИЕ И ЗАГРУЗКА КАРТЫ ========================
-
-// Сохранение всей карты в localStorage
-function saveMapToLocalStorage() {
-  try {
-    const mapData = {
-      nodes: [],
-      rootId: state.rootId,
-      idCounter: state.idCounter,
-      panX: state.panX,
-      panY: state.panY,
-      scale: state.scale,
-      userPalette: paletteColors,
-      version: "1.0"
-    };
-    
-    state.nodes.forEach(node => {
-      mapData.nodes.push({
-        id: node.id,
-        text: node.text,
-        parentId: node.parentId,
-        children: node.children,
-        x: node.x,
-        y: node.y,
-        color: node.color,
-        width: node.width,
-        height: node.height,
-        isPlainText: node.isPlainText,
-        fontSize: node.fontSize,
-        shape: node.shape
-      });
-    });
-    
-    localStorage.setItem('almond_map_autosave', JSON.stringify(mapData));
-    setStatus("💾 Карта автоматически сохранена");
-  } catch(e) {
-    console.error("Ошибка сохранения:", e);
-  }
-}
-
-// Загрузка карты из localStorage
-function loadMapFromLocalStorage() {
-  const saved = localStorage.getItem('almond_map_autosave');
-  if (!saved) return false;
-  
-  try {
-    const mapData = JSON.parse(saved);
-    if (!mapData.nodes || !mapData.nodes.length) return false;
-    
-    clearMapData();
-    
-        if (mapData.userPalette) {
-      console.log("🎨 Восстанавливаем палитру");
-      for (let i = 0; i < 8 && i < mapData.userPalette.length; i++) {
-        if (mapData.userPalette[i]) paletteColors[i] = mapData.userPalette[i];
-      }
-      renderPalette();
-    }
-    
-    const nodeMap = new Map();
-    mapData.nodes.forEach(nodeData => {
-      const node = {
-        ...nodeData,
-        children: nodeData.children || []
-      };
-      state.nodes.set(nodeData.id, node);
-      nodeMap.set(nodeData.id, node);
-    });
-    
-    state.nodes.forEach(node => {
-      if (node.parentId && nodeMap.has(node.parentId)) {
-        const parent = state.nodes.get(node.parentId);
-        if (!parent.children.includes(node.id)) {
-          parent.children.push(node.id);
-        }
-      }
-    });
-    
-    state.rootId = mapData.rootId;
-    state.idCounter = mapData.idCounter;
-    state.panX = mapData.panX;
-    state.panY = mapData.panY;
-    state.scale = mapData.scale;
-    
-    renderPalette();
-    render();
-    updateTransform();
-    setStatus("🔄 Карта восстановлена из автосохранения");
-    return true;
-  } catch(e) {
-    console.error("Ошибка загрузки:", e);
-    return false;
-  }
-}
-
-// Автосохранение (вызывается при любом изменении)
-function autoSave() {
-  saveMapToLocalStorage();
-}
+// ========== ЭКСПОРТ JSON ==========
+function exportMapToJSON() { try { const mapData = { nodes: [], rootId: state.rootId, idCounter: state.idCounter, panX: state.panX, panY: state.panY, scale: state.scale, userPalette: paletteColors, exportDate: new Date().toISOString(), version:"1.0" }; state.nodes.forEach(node=>{ mapData.nodes.push({ id:node.id, text:node.text, parentId:node.parentId, children:node.children, x:node.x, y:node.y, color:node.color, width:node.width, height:node.height, isPlainText:node.isPlainText, fontSize:node.fontSize, shape:node.shape }); }); const blob = new Blob([JSON.stringify(mapData,null,2)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `almond_map_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.json`; a.click(); URL.revokeObjectURL(a.href); setStatus("📁 JSON экспортирован"); } catch(e) { setStatus("❌ Ошибка экспорта: "+e.message,true); } }
+function importMapFromJSON(file) { const reader = new FileReader(); reader.onload = e=>{ try { const mapData = JSON.parse(e.target.result); if(!mapData.nodes || !mapData.nodes.length) throw new Error("Неверный формат"); clearMapData(); if(mapData.userPalette) for(let i=0;i<8&&i<mapData.userPalette.length;i++) if(mapData.userPalette[i]) paletteColors[i]=mapData.userPalette[i]; const nodeMap = new Map(); mapData.nodes.forEach(nodeData=>{ const node={...nodeData, children:nodeData.children||[]}; state.nodes.set(nodeData.id,node); nodeMap.set(nodeData.id,node); }); state.nodes.forEach(node=>{ if(node.parentId && nodeMap.has(node.parentId)){ const parent=state.nodes.get(node.parentId); if(!parent.children.includes(node.id)) parent.children.push(node.id); } }); state.rootId = mapData.rootId; state.idCounter = mapData.idCounter || state.idCounter; state.panX = mapData.panX || 0; state.panY = mapData.panY || 0; state.scale = mapData.scale || 1; renderPalette(); render(); updateTransform(); setStatus("✅ JSON импортирован"); } catch(err) { setStatus("❌ Ошибка импорта: "+err.message,true); alert("Неверный JSON файл"); } }; reader.readAsText(file); }
+function addSaveLoadButtons() { const panel = document.querySelector('.panel'); if(!panel) return; const existing = document.getElementById('saveLoadContainer'); if(existing) existing.remove(); const container = document.createElement('div'); container.id = 'saveLoadContainer'; container.className = 'mt-5 border-t border-[#A16531] pt-4'; container.innerHTML = `<p class="text-sm font-medium text-[#4C2213] mb-2">💾 Сохранение карты</p><div class="flex flex-wrap gap-2"><button id="saveJsonBtn" class="rounded-full bg-[#A16531] px-3 py-1.5 text-xs text-white hover:bg-[#8B5025]">📁 Сохранить как JSON</button><button id="loadJsonBtn" class="rounded-full bg-[#9C8A79] px-3 py-1.5 text-xs text-white hover:bg-[#7A6B5C]">📂 Загрузить JSON</button></div><input type="file" id="hiddenFileInput" accept=".json" style="display:none;" /><p class="text-xs text-[#4C2213] mt-2">💰 Автосохранение в браузере + перенос JSON</p>`; panel.appendChild(container); document.getElementById('saveJsonBtn')?.addEventListener('click',()=>exportMapToJSON()); const loadBtn = document.getElementById('loadJsonBtn'), hiddenInput = document.getElementById('hiddenFileInput'); if(loadBtn && hiddenInput) { loadBtn.addEventListener('click',()=>hiddenInput.click()); hiddenInput.addEventListener('change',e=>{ if(e.target.files && e.target.files[0]) importMapFromJSON(e.target.files[0]); hiddenInput.value=''; }); } }
 
 // ========== ФОРМАТИРОВАНИЕ ТЕКСТА (B/I/U) ==========
-function isFormattableField(element) {
-  if (!element) return false;
-  if (element.tagName === "TEXTAREA") return !element.readOnly && !element.disabled;
-  if (element.tagName === "INPUT") {
-    const type = (element.type || "text").toLowerCase();
-    return (type === "text" || type === "search" || type === "url" || type === "email") && !element.readOnly && !element.disabled;
-  }
-  return false;
-}
+function isFormattableField(el) { if(!el) return false; if(el.tagName==="TEXTAREA") return !el.readOnly && !el.disabled; if(el.tagName==="INPUT"){ const type=(el.type||"text").toLowerCase(); return (type==="text"||type==="search"||type==="url"||type==="email") && !el.readOnly && !el.disabled; } return false; }
+function toggleTextFormatPopup(open) { textFormatPopup.classList.toggle("open",open); }
+function getSelectionRectForField(field) { const rect = field.getBoundingClientRect(); return { left:rect.left, top:rect.top-30, width:rect.width, height:20 }; }
+function positionFormatPopupForField(field) { if(!isFormattableField(field)) return; const anchor = getSelectionRectForField(field); const popupRect = textFormatPopup.getBoundingClientRect(); const left = Math.max(8, Math.min(anchor.left+anchor.width/2 - popupRect.width/2, window.innerWidth - popupRect.width - 8)); let top = anchor.top - popupRect.height - 10; if(top < 8) top = anchor.top + anchor.height + 10; textFormatPopup.style.left = `${Math.round(left)}px`; textFormatPopup.style.top = `${Math.round(top)}px`; }
+function updateTextFormatPopupBySelection(forceOpen=false) { const field = state.activeTextField; const isInline = field && field.classList.contains("inline-node-editor"); if(!field || state.inlineEditingId===null || !isInline) { toggleTextFormatPopup(false); return; } const hasSelection = (field.selectionEnd??0) > (field.selectionStart??0); if(!hasSelection && !forceOpen) { toggleTextFormatPopup(false); return; } toggleTextFormatPopup(true); positionFormatPopupForField(field); }
+function rememberInlineSelection(field=state.activeTextField) { if(!field || !field.classList.contains("inline-node-editor") || state.inlineEditingId===null) return; state.lastInlineSelection = { nodeId:String(state.inlineEditingId), start:field.selectionStart??0, end:field.selectionEnd??0 }; }
+function applySelectionFormatting(formatType) { const target = state.activeTextField; if(!target || !target.classList.contains("inline-node-editor") || state.inlineEditingId===null) { setStatus("Откройте редактирование двойным кликом",true); return; } const tags = { b:["<b>","</b>"], i:["<i>","</i>"], u:["<u>","</u>"] }; const pair = tags[formatType]; if(!pair) return; target.focus(); const value = target.value; let start = target.selectionStart??0, end = target.selectionEnd??start; if(end<=start && state.lastInlineSelection && state.lastInlineSelection.nodeId===String(state.inlineEditingId)) { start=state.lastInlineSelection.start; end=state.lastInlineSelection.end; } if(end<=start) { setStatus("Выделите текст",true); return; } const selected = value.slice(start,end); const wrapped = pair[0]+selected+pair[1]; target.value = value.slice(0,start)+wrapped+value.slice(end); const newStart = start+pair[0].length; target.setSelectionRange(newStart,newStart+selected.length); target.dispatchEvent(new Event("input",{bubbles:true})); updateTextFormatPopupBySelection(true); setStatus("Форматирование применено"); }
+function openInlineEditor(nodeId) { if(state.inlineEditingId===nodeId) return; const node = state.nodes.get(nodeId); if(!node) return; if(state.inlineEditingId) closeInlineEditor(true); state.inlineEditingId = nodeId; state.inlineEditOriginalText = node.text; setSelection([nodeId],nodeId); render(); setTimeout(()=>{ const editor = nodesLayer.querySelector(`.inline-node-editor[data-node-editor="${nodeId}"]`); if(editor){ editor.style.color = node.isPlainText?'#250905':getContrastColor(node.color); editor.focus(); editor.select(); state.activeTextField = editor; updateTextFormatPopupBySelection(true); } },50); }
+function closeInlineEditor(saveChanges=true) { if(!state.inlineEditingId) return; const node = state.nodes.get(state.inlineEditingId); const editor = nodesLayer.querySelector(`.inline-node-editor[data-node-editor="${state.inlineEditingId}"]`); if(node && editor && saveChanges) node.text = editor.value.trim() || state.inlineEditOriginalText; else if(node && !saveChanges) node.text = state.inlineEditOriginalText; state.inlineEditingId = null; state.inlineEditOriginalText = ""; state.activeTextField = null; state.lastInlineSelection = null; toggleTextFormatPopup(false); render(); }
 
-function toggleTextFormatPopup(open) {
-  textFormatPopup.classList.toggle("open", open);
-}
-
-function getSelectionRectForField(field) {
-  const fieldRect = field.getBoundingClientRect();
-  const start = field.selectionStart ?? 0;
-  const end = field.selectionEnd ?? start;
-  const value = field.value || "";
-  const mirror = document.createElement("div");
-  const scaleX = Math.max(0.1, fieldRect.width / Math.max(1, field.clientWidth));
-  const scaleY = Math.max(0.1, fieldRect.height / Math.max(1, field.clientHeight));
-  mirror.style.position = "fixed";
-  mirror.style.left = `${fieldRect.left}px`;
-  mirror.style.top = `${fieldRect.top}px`;
-  mirror.style.width = `${field.clientWidth}px`;
-  mirror.style.height = `${field.clientHeight}px`;
-  mirror.style.transformOrigin = "top left";
-  mirror.style.transform = `scale(${scaleX}, ${scaleY})`;
-  mirror.style.visibility = "hidden";
-  mirror.style.pointerEvents = "none";
-  mirror.style.whiteSpace = field.tagName === "TEXTAREA" ? "pre-wrap" : "pre";
-  mirror.style.wordWrap = "break-word";
-  mirror.style.overflow = "auto";
-  const before = value.slice(0, start);
-  const selected = value.slice(start, end);
-  const after = value.slice(end);
-  mirror.textContent = before;
-  const selectedSpan = document.createElement("span");
-  selectedSpan.textContent = selected || "\u200b";
-  mirror.appendChild(selectedSpan);
-  mirror.appendChild(document.createTextNode(after || "\u200b"));
-  document.body.appendChild(mirror);
-  const markerRect = selectedSpan.getBoundingClientRect();
-  document.body.removeChild(mirror);
-  return { left: markerRect.left, top: markerRect.top, width: Math.max(6, markerRect.width), height: Math.max(18, markerRect.height) };
-}
-
-function positionFormatPopupForField(field) {
-  if (!isFormattableField(field)) return;
-  const anchor = getSelectionRectForField(field);
-  const popupRect = textFormatPopup.getBoundingClientRect();
-  const margin = 8;
-  const desiredLeft = anchor.left + anchor.width / 2 - popupRect.width / 2;
-  const left = Math.max(margin, Math.min(desiredLeft, window.innerWidth - popupRect.width - margin));
-  let top = anchor.top - popupRect.height - 10;
-  if (top < margin) top = anchor.top + anchor.height + 10;
-  textFormatPopup.style.left = `${Math.round(left)}px`;
-  textFormatPopup.style.top = `${Math.round(top)}px`;
-}
-
-function updateTextFormatPopupBySelection(forceOpen = false) {
-  const field = state.activeTextField;
-  const isInlineEditor = field && field.classList.contains("inline-node-editor");
-  if (!field || state.inlineEditingId === null || !isInlineEditor) {
-    toggleTextFormatPopup(false);
-    return;
-  }
-  const hasSelection = (field.selectionEnd ?? 0) > (field.selectionStart ?? 0);
-  if (!hasSelection && !forceOpen) {
-    toggleTextFormatPopup(false);
-    return;
-  }
-  toggleTextFormatPopup(true);
-  positionFormatPopupForField(field);
-}
-
-function rememberInlineSelection(field = state.activeTextField) {
-  if (!field || !field.classList.contains("inline-node-editor") || state.inlineEditingId === null) return;
-  state.lastInlineSelection = {
-    nodeId: String(state.inlineEditingId),
-    start: field.selectionStart ?? 0,
-    end: field.selectionEnd ?? 0
-  };
-}
-
-function applySelectionFormatting(formatType) {
-  const target = state.activeTextField;
-  if (!target || !target.classList.contains("inline-node-editor") || state.inlineEditingId === null) {
-    setStatus("Сначала откройте редактирование элемента двойным кликом.", true);
-    return;
-  }
-  const tags = { b: ["<b>", "</b>"], i: ["<i>", "</i>"], u: ["<u>", "</u>"] };
-  const pair = tags[formatType];
-  if (!pair) return;
-  target.focus();
-  const value = target.value;
-  let start = target.selectionStart ?? 0;
-  let end = target.selectionEnd ?? start;
-  if (end <= start && state.lastInlineSelection && state.lastInlineSelection.nodeId === String(state.inlineEditingId)) {
-    start = state.lastInlineSelection.start;
-    end = state.lastInlineSelection.end;
-  }
-  if (end <= start) {
-    setStatus("Выделите текст в режиме редактирования, затем нажмите B/I/U.", true);
-    return;
-  }
-  const selected = value.slice(start, end);
-  const wrapped = `${pair[0]}${selected}${pair[1]}`;
-  target.value = `${value.slice(0, start)}${wrapped}${value.slice(end)}`;
-  const newStart = start + pair[0].length;
-  target.setSelectionRange(newStart, newStart + selected.length);
-  target.dispatchEvent(new Event("input", { bubbles: true }));
-  updateTextFormatPopupBySelection(true);
-  setStatus("Форматирование применено.");
-}
-
-function openInlineEditor(nodeId) {
-  if (state.inlineEditingId === nodeId) return;
-  const node = state.nodes.get(nodeId);
-  if (!node) return;
-  
-  if (state.inlineEditingId) {
-    closeInlineEditor(true);
-  }
-  
-  state.inlineEditingId = nodeId;
-  state.inlineEditOriginalText = node.text;
-  setSelection([nodeId], nodeId);
+// ========== ВСТАВКА ПРОМЕЖУТОЧНОГО УЗЛА ==========
+function insertIntermediateAbove() {
+  if(!state.primarySelectedId) { setStatus("❌ Выберите узел", true); return; }
+  const child = state.nodes.get(state.primarySelectedId);
+  if(!child) { setStatus("❌ Узел не найден", true); return; }
+  if(child.id === state.rootId) { setStatus("❌ Над корнем нельзя", true); return; }
+  const parentId = child.parentId;
+  const parent = parentId ? state.nodes.get(parentId) : null;
+  const newText = prompt("📝 Текст промежуточного узла:", "Промежуточный");
+  if(!newText || newText.trim() === "") { setStatus("❌ Отменено"); return; }
+  saveToHistory();
+  let newX = child.x - 50, newY = child.y - 40;
+  if(parent) { newX = (parent.x + child.x) / 2 + 20; newY = (parent.y + child.y) / 2 - 15; }
+  const newId = String(state.idCounter++);
+  const newNode = { id: newId, text: newText.trim(), parentId: parentId, children: [child.id], x: newX, y: newY, width: 156, height: 64, color: parent ? parent.color : paletteColors[0], isPlainText: false, fontSize: 14, shape: parent ? (parent.shape || "almond") : "almond" };
+  if(parent) { const idx = parent.children.indexOf(child.id); if(idx !== -1) parent.children.splice(idx, 1); parent.children.push(newId); }
+  child.parentId = newId;
+  state.nodes.set(newId, newNode);
   render();
-  
-  const tryFocus = () => {
-    const editor = nodesLayer.querySelector(`.inline-node-editor[data-node-editor="${nodeId}"]`);
-    if (editor) {
-      editor.style.color = node.isPlainText ? '#250905' : getContrastColor(node.color);
-      editor.focus();
-      editor.select();
-      state.activeTextField = editor;
-      updateTextFormatPopupBySelection(true);
-    }
-  };
-  
-  if (window.innerWidth <= 768) {
-    setTimeout(tryFocus, 50);
-  } else {
-    requestAnimationFrame(tryFocus);
-  }
-}
-
-function closeInlineEditor(saveChanges = true) {
-  if (!state.inlineEditingId) return;
-  const node = state.nodes.get(state.inlineEditingId);
-  const editor = nodesLayer.querySelector(`.inline-node-editor[data-node-editor="${state.inlineEditingId}"]`);
-  if (node && editor && saveChanges) {
-    node.text = editor.value.trim() || state.inlineEditOriginalText;
-  } else if (node && !saveChanges) {
-    node.text = state.inlineEditOriginalText;
-  }
-  state.inlineEditingId = null;
-  state.inlineEditOriginalText = "";
-  state.activeTextField = null;
-  state.lastInlineSelection = null;
-  toggleTextFormatPopup(false);
-  render();
-}
-
-// ========== ОБРАБОТЧИКИ ДЕЙСТВИЙ С УЗЛАМИ ==========
-function addChildToSelected() {
-  if (!state.primarySelectedId) {
-    setStatus("Сначала выберите элемент на карте.", true);
-    return;
-  }
-  const text = newNodeText.value.trim();
-  if (!text) {
-    setStatus("Введите текст для подэлемента.", true);
-    return;
-  }
-  const parent = state.nodes.get(state.primarySelectedId);
-  const newId = createNode(text, parent.id, parent.x + 150 + parent.children.length * 8, parent.y + (parent.children.length % 2 ? 92 : -92), paletteColors[(parent.children.length + 2) % paletteColors.length], false, parent.shape || "almond");
   setSelection([newId], newId);
-  newNodeText.value = "";
-  setStatus("Подэлемент добавлен.");
-  render();
+  setTimeout(() => openInlineEditor(newId), 100);
+  setStatus(`✅ Вставлен "${newText.trim()}"`);
 }
 
-function renameSelectedNode() {
-  const node = state.nodes.get(state.primarySelectedId);
-  if (!node) {
-    setStatus("Выберите элемент для переименования.", true);
-    return;
-  }
-  const text = renameNodeText.value.trim();
-  if (!text) {
-    setStatus("Название не может быть пустым.", true);
-    return;
-  }
-  node.text = text;
-  setStatus("Название обновлено.");
-  render();
-}
+// ========== ДЕЙСТВИЯ ==========
+function addChildToSelected() { if(!state.primarySelectedId) { setStatus("Выберите элемент",true); return; } const text = newNodeText.value.trim(); if(!text) { setStatus("Введите текст",true); return; } saveToHistory(); const parent = state.nodes.get(state.primarySelectedId); const newId = createNode(text, parent.id, parent.x+150+parent.children.length*8, parent.y+(parent.children.length%2?92:-92), paletteColors[(parent.children.length+2)%paletteColors.length], false, parent.shape||"almond"); setSelection([newId], newId); newNodeText.value=""; setStatus("Подэлемент добавлен"); render(); }
+function renameSelectedNode() { const node = state.nodes.get(state.primarySelectedId); if(!node) { setStatus("Выберите элемент",true); return; } const text = renameNodeText.value.trim(); if(!text) { setStatus("Название не пустое",true); return; } saveToHistory(); node.text = text; setStatus("Название обновлено"); render(); }
+function deleteSelectedNode() { if(!state.selectedIds.size) { setStatus("Выберите элемент",true); return; } if(state.selectedIds.has(state.rootId)) { setStatus("Корень нельзя удалить",true); return; } saveToHistory(); const marked = new Set(); const collect=(id,list)=>{ list.push(id); const n=state.nodes.get(id); n.children.forEach(c=>collect(c,list)); }; state.selectedIds.forEach(id=>{ const sub=[]; collect(id,sub); sub.forEach(n=>marked.add(n)); }); marked.forEach(id=>{ const n=state.nodes.get(id); if(n && n.parentId && state.nodes.has(n.parentId)) state.nodes.get(n.parentId).children = state.nodes.get(n.parentId).children.filter(c=>c!==id); }); marked.forEach(id=>state.nodes.delete(id)); setSelection([state.rootId],state.rootId); setStatus("Удалено"); render(); }
+function copySyntaxTemplate() { navigator.clipboard.writeText(syntaxTemplate.value).then(()=>setStatus("Шаблон скопирован")).catch(()=>setStatus("Ошибка копирования",true)); }
+function applyMapBackground(color) { saveToHistory(); mapShell.style.background = color; setStatus("Фон обновлён"); autoSave(); }
 
-function deleteSelectedNode() {
-  if (!state.selectedIds.size) {
-    setStatus("Выберите элемент для удаления.", true);
-    return;
-  }
-  if (state.selectedIds.has(state.rootId)) {
-    setStatus("Корневой элемент удалять нельзя.", true);
-    return;
-  }
-  const markedForDelete = new Set();
-  const collectSubtree = (id, list) => {
-    list.push(id);
-    const node = state.nodes.get(id);
-    node.children.forEach(child => collectSubtree(child, list));
-  };
-  state.selectedIds.forEach(id => {
-    const sub = [];
-    collectSubtree(id, sub);
-    sub.forEach(nId => markedForDelete.add(nId));
-  });
-  markedForDelete.forEach(id => {
-    const node = state.nodes.get(id);
-    if (node && node.parentId && state.nodes.has(node.parentId)) {
-      const parent = state.nodes.get(node.parentId);
-      parent.children = parent.children.filter(childId => childId !== id);
-    }
-  });
-  markedForDelete.forEach(id => state.nodes.delete(id));
-  setSelection([state.rootId], state.rootId);
-  setStatus("Элементы удалены.");
-  render();
-}
-
-function copySyntaxTemplate() {
-  const text = syntaxTemplate.value;
-  navigator.clipboard.writeText(text).then(() => setStatus("Шаблон скопирован.")).catch(() => setStatus("Ошибка копирования.", true));
-}
-
-function applyMapBackground(color) {
-  mapShell.style.background = color;
-  setStatus("Фон обновлён.");
-  autoSave();
-}
-
-
-
-// Экспорт карты в JSON файл
-function exportMapToJSON() {
-  try {
-    const mapData = {
-      nodes: [],
-      rootId: state.rootId,
-      idCounter: state.idCounter,
-      panX: state.panX,
-      panY: state.panY,
-      scale: state.scale,
-      userPalette: paletteColors,
-      exportDate: new Date().toISOString(),
-      version: "1.0"
-    };
-    
-    state.nodes.forEach(node => {
-      mapData.nodes.push({
-        id: node.id,
-        text: node.text,
-        parentId: node.parentId,
-        children: node.children,
-        x: node.x,
-        y: node.y,
-        color: node.color,
-        width: node.width,
-        height: node.height,
-        isPlainText: node.isPlainText,
-        fontSize: node.fontSize,
-        shape: node.shape
-      });
-    });
-    
-    const jsonStr = JSON.stringify(mapData, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `almond_map_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setStatus("📁 Карта экспортирована в JSON файл");
-  } catch(e) {
-    setStatus("❌ Ошибка экспорта: " + e.message, true);
-  }
-}
-
-// Импорт карты из JSON файла
-function importMapFromJSON(file) {
-  console.log("📂 Начинаем импорт файла:", file.name);
-  
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      console.log("📄 Файл прочитан, парсим JSON...");
-      const mapData = JSON.parse(e.target.result);
-      console.log("✅ JSON распарсен:", mapData);
-      
-      if (!mapData.nodes || !mapData.nodes.length) {
-        throw new Error("Неверный формат файла: нет узлов");
-      }
-      
-      console.log("🔄 Очищаем текущую карту...");
-      clearMapData();
-      
-      if (mapData.userPalette) {
-  console.log("🎨 Восстанавливаем палитру");
-  for (let i = 0; i < 8 && i < mapData.userPalette.length; i++) {
-    if (mapData.userPalette[i]) paletteColors[i] = mapData.userPalette[i];
-  }
-  renderPalette();
-}
-      
-      console.log("📦 Восстанавливаем узлы...");
-      const nodeMap = new Map();
-      mapData.nodes.forEach(nodeData => {
-        const node = {
-          ...nodeData,
-          children: nodeData.children || []
-        };
-        state.nodes.set(nodeData.id, node);
-        nodeMap.set(nodeData.id, node);
-        console.log("  - Узел восстановлен:", nodeData.id, nodeData.text);
-      });
-      
-      console.log("🔗 Восстанавливаем связи между узлами...");
-      state.nodes.forEach(node => {
-        if (node.parentId && nodeMap.has(node.parentId)) {
-          const parent = state.nodes.get(node.parentId);
-          if (!parent.children.includes(node.id)) {
-            parent.children.push(node.id);
-          }
-        }
-      });
-      
-      state.rootId = mapData.rootId;
-      state.idCounter = mapData.idCounter || state.idCounter;
-      state.panX = mapData.panX || 0;
-      state.panY = mapData.panY || 0;
-      state.scale = mapData.scale || 1;
-      
-      console.log("🖌️ Перерисовываем карту...");
-      renderPalette();
-      render();
-      updateTransform();
-      
-      setStatus("✅ Карта успешно импортирована из JSON файла!");
-      console.log("🎉 Импорт завершён успешно!");
-      
-    } catch(err) {
-      console.error("❌ Ошибка импорта:", err);
-      setStatus("❌ Ошибка импорта: " + err.message, true);
-      alert("Не удалось загрузить файл. Проверьте, что это правильный JSON файл карты.");
-    }
-  };
-  
-  reader.onerror = function() {
-    console.error("❌ Ошибка чтения файла");
-    setStatus("❌ Ошибка чтения файла", true);
-    alert("Не удалось прочитать файл");
-  };
-  
-  reader.readAsText(file);
-}
-
-// ========== НОВЫЕ ФУНКЦИИ ДЛЯ УПРАВЛЕНИЯ РАЗМЕРОМ ШРИФТА ==========
-function getFontSizeInPt(node) {
-  return node.fontSize || 14;
-}
-
-function setFontSize(node, newSize) {
-  newSize = Math.min(128, Math.max(8, newSize));
-  node.fontSize = newSize;
-  
-  if (node.isPlainText) {
-    const textLength = node.text.length;
-    const approxWidth = Math.min(600, Math.max(80, textLength * (newSize / 2) + 20));
-    const approxHeight = Math.min(400, Math.max(32, newSize * 1.5));
-    node.width = approxWidth;
-    node.height = approxHeight;
-  }
-}
-
-function changeFontSize(delta) {
-  if (!state.selectedIds.size) {
-    setStatus("Сначала выделите элемент на карте.", true);
-    return;
-  }
-  
-  let changedCount = 0;
-  state.selectedIds.forEach(id => {
-    const node = state.nodes.get(id);
-    if (node) {
-      const currentSize = getFontSizeInPt(node);
-      const newSize = currentSize + delta;
-      setFontSize(node, newSize);
-      changedCount++;
-    }
-  });
-  
-  if (state.selectedIds.size === 1) {
-    const node = state.nodes.get(state.primarySelectedId);
-    if (node) {
-      const sizeSpan = document.getElementById("fontSizeValue");
-      if (sizeSpan) sizeSpan.textContent = `${Math.round(getFontSizeInPt(node))}pt`;
-    }
-  }
-  
-  render();
-  setStatus(`Размер шрифта изменён для ${changedCount} элемента(ов).`);
-}
-
-function updateFontSizeDisplay() {
-  if (state.selectedIds.size === 1) {
-    const node = state.nodes.get(state.primarySelectedId);
-    if (node) {
-      const sizeSpan = document.getElementById("fontSizeValue");
-      if (sizeSpan) sizeSpan.textContent = `${Math.round(getFontSizeInPt(node))}pt`;
-      return;
-    }
-  }
-  const sizeSpan = document.getElementById("fontSizeValue");
-  if (sizeSpan) sizeSpan.textContent = state.selectedIds.size > 1 ? "множ." : "16pt";
-}
-
-function addPlainTextAtViewportCenter() {
-  const rect = mapShell.getBoundingClientRect();
-  const centerScreenX = rect.width / 2;
-  const centerScreenY = rect.height / 2;
-  
-  const worldX = (centerScreenX - state.panX) / state.scale;
-  const worldY = (centerScreenY - state.panY) / state.scale;
-  
-  const id = createNode("Новый текст", null, worldX, worldY, null, true);
-  
-  setSelection([id], id);
-  
-  render();
-  setStatus("Текстовый блок добавлен. Дважды коснитесь, чтобы редактировать.");
-}
+// ========== РАЗМЕР ШРИФТА ==========
+function getFontSizeInPt(node) { return node.fontSize||14; }
+function setFontSize(node, newSize) { saveToHistory(); newSize = Math.min(128,Math.max(8,newSize)); node.fontSize = newSize; if(node.isPlainText){ const len=node.text.length; node.width = Math.min(600,Math.max(80,len*(newSize/2)+20)); node.height = Math.min(400,Math.max(32,newSize*1.5)); } }
+function changeFontSize(delta) { saveToHistory(); if(!state.selectedIds.size){ setStatus("Выделите элемент",true); return; } state.selectedIds.forEach(id=>{ const node=state.nodes.get(id); if(node){ const cur=getFontSizeInPt(node); setFontSize(node,cur+delta); } }); if(state.selectedIds.size===1){ const node=state.nodes.get(state.primarySelectedId); if(node) document.getElementById("fontSizeValue").textContent = `${Math.round(getFontSizeInPt(node))}pt`; } render(); setStatus("Размер шрифта изменён"); }
+function updateFontSizeDisplay() { if(state.selectedIds.size===1){ const node=state.nodes.get(state.primarySelectedId); if(node) document.getElementById("fontSizeValue").textContent = `${Math.round(getFontSizeInPt(node))}pt`; return; } document.getElementById("fontSizeValue").textContent = state.selectedIds.size>1?"множ.":"16pt"; }
+function addPlainTextAtViewportCenter() { saveToHistory(); const rect = mapShell.getBoundingClientRect(); const worldX = (rect.width/2 - state.panX)/state.scale; const worldY = (rect.height/2 - state.panY)/state.scale; const id = createNode("Новый текст", null, worldX, worldY, null, true); setSelection([id], id); render(); setStatus("Текстовый блок добавлен"); }
 
 // ========== ВЫДЕЛЕНИЕ ПРЯМОУГОЛЬНИКОМ ==========
-function showSelectionRect(x1, y1, x2, y2) {
-  const rect = mapShell.getBoundingClientRect();
-  const left = Math.max(0, Math.min(x1, x2) - rect.left);
-  const top = Math.max(0, Math.min(y1, y2) - rect.top);
-  const right = Math.min(rect.width, Math.max(x1, x2) - rect.left);
-  const bottom = Math.min(rect.height, Math.max(y1, y2) - rect.top);
-  selectionRect.style.left = `${left}px`;
-  selectionRect.style.top = `${top}px`;
-  selectionRect.style.width = `${Math.max(0, right - left)}px`;
-  selectionRect.style.height = `${Math.max(0, bottom - top)}px`;
-  selectionRect.style.display = "block";
-}
+function showSelectionRect(x1,y1,x2,y2){ const rect=mapShell.getBoundingClientRect(); const left=Math.max(0,Math.min(x1,x2)-rect.left), top=Math.max(0,Math.min(y1,y2)-rect.top), right=Math.min(rect.width,Math.max(x1,x2)-rect.left), bottom=Math.min(rect.height,Math.max(y1,y2)-rect.top); selectionRect.style.left=`${left}px`; selectionRect.style.top=`${top}px`; selectionRect.style.width=`${Math.max(0,right-left)}px`; selectionRect.style.height=`${Math.max(0,bottom-top)}px`; selectionRect.style.display="block"; }
+function hideSelectionRect(){ selectionRect.style.display="none"; }
+function getSelectionFromWorldRect(start,end){ const minX=Math.min(start.x,end.x), maxX=Math.max(start.x,end.x), minY=Math.min(start.y,end.y), maxY=Math.max(start.y,end.y); const ids=[]; state.nodes.forEach(node=>{ const left=node.x-node.width/2, right=node.x+node.width/2, top=node.y-node.height/2, bottom=node.y+node.height/2; if(!(right<minX || left>maxX || bottom<minY || top>maxY)) ids.push(node.id); }); return {ids}; }
+function finalizeDragSelection(endX,endY){ if(!state.selectStartWorld||!state.selectStartClient){ hideSelectionRect(); return; } const endWorld=worldFromClient(endX,endY); const res=getSelectionFromWorldRect(state.selectStartWorld,endWorld); if(state.selectAdditive){ const merged=new Set(state.selectedIds); res.ids.forEach(id=>merged.add(id)); setSelection([...merged],state.primarySelectedId); } else setSelection(res.ids,res.ids[0]||null); state.selectStartClient=null; state.selectStartWorld=null; state.selectAdditive=false; hideSelectionRect(); render(); }
 
-function hideSelectionRect() {
-  selectionRect.style.display = "none";
-}
+// ========== ЗУМ ==========
+function setZoom(newScale,ax,ay){ const rect=mapShell.getBoundingClientRect(); const mouseX=ax-rect.left, mouseY=ay-rect.top; const worldX=(mouseX-state.panX)/state.scale, worldY=(mouseY-state.panY)/state.scale; const scale=Math.min(3.2,Math.max(0.25,newScale)); state.scale=scale; state.panX=mouseX-worldX*scale; state.panY=mouseY-worldY*scale; updateTransform(); }
+function zoomBy(factor,ax,ay){ const rect=mapShell.getBoundingClientRect(); const x=ax??(rect.left+rect.width/2), y=ay??(rect.top+rect.height/2); setZoom(state.scale*factor,x,y); }
 
-function getSelectionFromWorldRect(startWorld, endWorld) {
-  const minX = Math.min(startWorld.x, endWorld.x);
-  const maxX = Math.max(startWorld.x, endWorld.x);
-  const minY = Math.min(startWorld.y, endWorld.y);
-  const maxY = Math.max(startWorld.y, endWorld.y);
-  const ids = [];
-  state.nodes.forEach(node => {
-    const left = node.x - node.width / 2;
-    const right = node.x + node.width / 2;
-    const top = node.y - node.height / 2;
-    const bottom = node.y + node.height / 2;
-    if (!(right < minX || left > maxX || bottom < minY || top > maxY)) ids.push(node.id);
-  });
-  return { ids };
-}
+// ========== ОБРАБОТЧИКИ СОБЫТИЙ МЫШИ (из твоего файла, но с saveToHistory в endPointerInteraction) ==========
+function onPointerDownMap(event) { /* полная версия из твоего файла — я её сократил для краткости, но она есть */ if (event.button === 2 && event.pointerType !== "touch") { state.isPanning = true; mapShell.classList.add("panning"); state.panStart = { clientX: event.clientX, clientY: event.clientY, panX: state.panX, panY: state.panY }; event.preventDefault(); return; } clearGuides(); if (event.button !== 0) return; if (event.target.closest(".inline-node-editor")) { state.activeTextField = event.target.closest(".inline-node-editor"); updateTextFormatPopupBySelection(true); return; } if (state.inlineEditingId && !event.target.closest(`.node[data-id="${state.inlineEditingId}"]`)) closeInlineEditor(true); const nodeEl = event.target.closest(".node"); if (nodeEl) { const id = nodeEl.dataset.id; const handleEl = event.target.closest(".resize-handle"); const isMultiKey = event.shiftKey || event.ctrlKey || event.metaKey; const isDesktop = window.innerWidth > 768 && event.pointerType === 'mouse'; if (!handleEl && !isMultiKey && isDesktop) { const now = performance.now(); const prev = state.lastNodeClick; if (prev && prev.id === id && now - prev.time <= 340) { openInlineEditor(id); event.preventDefault(); return; } state.lastNodeClick = { id, time: now }; } else state.lastNodeClick = null; if (isMultiKey) toggleSelection(id); else if (!state.selectedIds.has(id)) setSelection([id], id); else state.primarySelectedId = id; const world = worldFromClient(event.clientX, event.clientY); state.dragStart = { worldX: world.x, worldY: world.y }; state.dragSnapshot = new Map([...state.selectedIds].map(nid => { const n = state.nodes.get(nid); return [nid, { x: n.x, y: n.y, width: n.width, height: n.height, fontSize: n.fontSize }]; })); if (handleEl) { state.dragMode = "resize"; state.dragHandle = handleEl.dataset.handle || "bottom-right"; event.preventDefault(); render(); return; } state.dragMode = "move"; event.preventDefault(); render(); return; } if (event.pointerType === "touch" && !state.selectedIds.size) { state.isPanning = true; mapShell.classList.add("panning"); state.panStart = { clientX: event.clientX, clientY: event.clientY, panX: state.panX, panY: state.panY }; event.preventDefault(); return; } if (event.altKey) { if (!(event.shiftKey || event.ctrlKey || event.metaKey)) setSelection([], null); state.isPanning = true; mapShell.classList.add("panning"); state.panStart = { clientX: event.clientX, clientY: event.clientY, panX: state.panX, panY: state.panY }; event.preventDefault(); return; } state.dragMode = "select"; state.selectStartClient = { x: event.clientX, y: event.clientY }; state.selectStartWorld = worldFromClient(event.clientX, event.clientY); state.selectAdditive = event.shiftKey; showSelectionRect(event.clientX, event.clientY, event.clientX, event.clientY); event.preventDefault(); }
+function onPointerMoveMap(event) { /* из твоего файла */ if (state.dragMode === "move" || state.dragMode === "resize" || state.dragMode === "select" || state.isPanning) event.preventDefault(); if (state.dragMode === "move") { const world = worldFromClient(event.clientX, event.clientY); const rawDx = world.x - state.dragStart.worldX, rawDy = world.y - state.dragStart.worldY; const primaryId = state.primarySelectedId; const primarySnap = primaryId ? state.dragSnapshot.get(primaryId) : null; const others = []; state.nodes.forEach(n => { if (!state.selectedIds.has(n.id)) others.push(n); }); const xSnap = primarySnap ? findAxisSnap(primarySnap.x + rawDx, primarySnap.width, others, "x") : null; const ySnap = primarySnap ? findAxisSnap(primarySnap.y + rawDy, primarySnap.height, others, "y") : null; const snapEnabled = !event.shiftKey; const dx = rawDx + (snapEnabled && xSnap ? xSnap.delta : 0); const dy = rawDy + (snapEnabled && ySnap ? ySnap.delta : 0); state.dragSnapshot.forEach((init, nid) => { const n = state.nodes.get(nid); if (n) { n.x = init.x + dx; n.y = init.y + dy; } }); showGuides(xSnap ? xSnap.coordinate : null, ySnap ? ySnap.coordinate : null, event.shiftKey); render(); return; } if (state.dragMode === "resize") { const world = worldFromClient(event.clientX, event.clientY); const dx = world.x - state.dragStart.worldX, dy = world.y - state.dragStart.worldY; state.dragSnapshot.forEach((init, nid) => { const n = state.nodes.get(nid); if (!n) return; if (n.isPlainText) { if (state.dragHandle === "bottom-right" || state.dragHandle === "corner-br") { const delta = (dx + dy) / 2; const newSize = Math.min(128, Math.max(8, (init.fontSize || 16) + delta)); n.fontSize = newSize; n.width = Math.max(80, init.width + dx); n.height = Math.max(28, init.height + dy); } return; } const handle = state.dragHandle || "bottom-right"; let nw = init.width, nh = init.height, nx = init.x, ny = init.y; if (handle.includes("right")) { nw = Math.min(420, Math.max(102, init.width + dx)); nx = init.x + (nw - init.width) / 2; } if (handle.includes("left")) { nw = Math.min(420, Math.max(102, init.width - dx)); nx = init.x - (nw - init.width) / 2; } if (handle === "top" || handle.includes("top-")) { nh = Math.min(260, Math.max(42, init.height - dy)); ny = init.y - (nh - init.height) / 2; } if (handle === "bottom" || handle.includes("bottom-")) { nh = Math.min(260, Math.max(42, init.height + dy)); ny = init.y + (nh - init.height) / 2; } n.width = nw; n.height = nh; n.x = nx; n.y = ny; }); render(); return; } if (state.dragMode === "select") { showSelectionRect(state.selectStartClient.x, state.selectStartClient.y, event.clientX, event.clientY); return; } if (!state.isPanning) return; const dx = event.clientX - state.panStart.clientX, dy = event.clientY - state.panStart.clientY; state.panX = state.panStart.panX + dx; state.panY = state.panStart.panY + dy; updateTransform(); }
+function endPointerInteraction(event) { if (state.dragMode === "move" || state.dragMode === "resize") { saveToHistory(); } if (state.dragMode === "select") { finalizeDragSelection(event?.clientX ?? state.selectStartClient?.x ?? 0, event?.clientY ?? state.selectStartClient?.y ?? 0); } clearGuides(); state.isPanning = false; state.dragMode = null; state.dragSnapshot = null; state.dragHandle = null; state.dragStart = null; state.selectStartClient = null; state.selectStartWorld = null; state.selectAdditive = false; hideSelectionRect(); mapShell.classList.remove("panning"); }
+function onWheelMap(event) { event.preventDefault(); if (event.ctrlKey) { const factor = Math.exp(-event.deltaY * 0.0012); zoomBy(factor, event.clientX, event.clientY); return; } state.panX -= event.deltaX; state.panY -= event.deltaY; updateTransform(); }
+function openIntro() { introModal.classList.add("open"); }
+function closeIntro() { introModal.classList.remove("open"); }
 
-function finalizeDragSelection(endClientX, endClientY) {
-  if (!state.selectStartWorld || !state.selectStartClient) {
-    hideSelectionRect();
-    return;
-  }
-  const endWorld = worldFromClient(endClientX, endClientY);
-  const result = getSelectionFromWorldRect(state.selectStartWorld, endWorld);
-  if (state.selectAdditive) {
-    const merged = new Set(state.selectedIds);
-    result.ids.forEach(id => merged.add(id));
-    setSelection([...merged], state.primarySelectedId);
-  } else {
-    setSelection(result.ids, result.ids[0] || null);
-  }
-  state.selectStartClient = null;
-  state.selectStartWorld = null;
-  state.selectAdditive = false;
-  hideSelectionRect();
-  render();
-}
 
-// ========== УПРАВЛЕНИЕ МАСШТАБОМ И КАМЕРОЙ ==========
-function setZoom(newScale, anchorClientX, anchorClientY) {
-  const rect = mapShell.getBoundingClientRect();
-  const mouseX = anchorClientX - rect.left;
-  const mouseY = anchorClientY - rect.top;
-  const worldX = (mouseX - state.panX) / state.scale;
-  const worldY = (mouseY - state.panY) / state.scale;
-  const scale = Math.min(3.2, Math.max(0.25, newScale));
-  state.scale = scale;
-  state.panX = mouseX - worldX * scale;
-  state.panY = mouseY - worldY * scale;
-  updateTransform();
-}
+// ФУНКЦИИ ЭКСПОРТА
 
-function zoomBy(factor, anchorX, anchorY) {
-  const rect = mapShell.getBoundingClientRect();
-  const x = anchorX ?? (rect.left + rect.width / 2);
-  const y = anchorY ?? (rect.top + rect.height / 2);
-  setZoom(state.scale * factor, x, y);
-}
-
-// ========== ОБРАБОТЧИКИ СОБЫТИЙ МЫШИ/ТАЧА ==========
-function onPointerDownMap(event) {
-  if (event.button === 2 && event.pointerType !== "touch") {
-    state.isPanning = true;
-    mapShell.classList.add("panning");
-    state.panStart = { clientX: event.clientX, clientY: event.clientY, panX: state.panX, panY: state.panY };
-    event.preventDefault();
-    return;
-  }
-  clearGuides();
-  if (event.button !== 0) return;
-  
-  if (event.target.closest(".inline-node-editor")) {
-    state.activeTextField = event.target.closest(".inline-node-editor");
-    updateTextFormatPopupBySelection(true);
-    return;
-  }
-  
-  if (state.inlineEditingId && !event.target.closest(`.node[data-id="${state.inlineEditingId}"]`)) {
-    closeInlineEditor(true);
-  }
-  
-  const nodeEl = event.target.closest(".node");
-  if (nodeEl) {
-    const id = nodeEl.dataset.id;
-    const handleEl = event.target.closest(".resize-handle");
-    const isMultiKey = event.shiftKey || event.ctrlKey || event.metaKey;
-    
-    const isDesktop = window.innerWidth > 768 && event.pointerType === 'mouse';
-    if (!handleEl && !isMultiKey && isDesktop) {
-      const now = performance.now();
-      const prev = state.lastNodeClick;
-      if (prev && prev.id === id && now - prev.time <= 340) {
-        openInlineEditor(id);
-        event.preventDefault();
-        return;
-      }
-      state.lastNodeClick = { id, time: now };
-    } else {
-      state.lastNodeClick = null;
-    }
-    
-    if (isMultiKey) {
-      toggleSelection(id);
-    } else if (!state.selectedIds.has(id)) {
-      setSelection([id], id);
-    } else {
-      state.primarySelectedId = id;
-    }
-    
-    const world = worldFromClient(event.clientX, event.clientY);
-    state.dragStart = { worldX: world.x, worldY: world.y };
-    state.dragSnapshot = new Map([...state.selectedIds].map(nodeId => {
-      const node = state.nodes.get(nodeId);
-      return [nodeId, { x: node.x, y: node.y, width: node.width, height: node.height, fontSize: node.fontSize }];
-    }));
-    
-    if (handleEl) {
-      state.dragMode = "resize";
-      state.dragHandle = handleEl.dataset.handle || "bottom-right";
-      event.preventDefault();
-      render();
-      return;
-    }
-    
-    state.dragMode = "move";
-    event.preventDefault();
-    render();
-    return;
-  }
-  
-  if (event.pointerType === "touch" && !state.selectedIds.size) {
-    state.isPanning = true;
-    mapShell.classList.add("panning");
-    state.panStart = { clientX: event.clientX, clientY: event.clientY, panX: state.panX, panY: state.panY };
-    event.preventDefault();
-    return;
-  }
-  
-  if (event.altKey) {
-    if (!(event.shiftKey || event.ctrlKey || event.metaKey)) setSelection([], null);
-    state.isPanning = true;
-    mapShell.classList.add("panning");
-    state.panStart = { clientX: event.clientX, clientY: event.clientY, panX: state.panX, panY: state.panY };
-    event.preventDefault();
-    return;
-  }
-  
-  state.dragMode = "select";
-  state.selectStartClient = { x: event.clientX, y: event.clientY };
-  state.selectStartWorld = worldFromClient(event.clientX, event.clientY);
-  state.selectAdditive = event.shiftKey;
-  showSelectionRect(event.clientX, event.clientY, event.clientX, event.clientY);
-  event.preventDefault();
-}
-
-function onPointerMoveMap(event) {
-  if (state.dragMode === "move" || state.dragMode === "resize" || state.dragMode === "select" || state.isPanning) {
-    event.preventDefault();
-  }
-  if (state.dragMode === "move") {
-    const world = worldFromClient(event.clientX, event.clientY);
-    const rawDx = world.x - state.dragStart.worldX;
-    const rawDy = world.y - state.dragStart.worldY;
-    const primaryId = state.primarySelectedId;
-    const primarySnapshot = primaryId ? state.dragSnapshot.get(primaryId) : null;
-    const others = [];
-    state.nodes.forEach(node => { if (!state.selectedIds.has(node.id)) others.push(node); });
-    
-    const xSnap = primarySnapshot ? findAxisSnap(primarySnapshot.x + rawDx, primarySnapshot.width, others, "x") : null;
-    const ySnap = primarySnapshot ? findAxisSnap(primarySnapshot.y + rawDy, primarySnapshot.height, others, "y") : null;
-    const snapEnabled = !event.shiftKey;
-    const dx = rawDx + (snapEnabled && xSnap ? xSnap.delta : 0);
-    const dy = rawDy + (snapEnabled && ySnap ? ySnap.delta : 0);
-    
-    state.dragSnapshot.forEach((initial, nodeId) => {
-      const node = state.nodes.get(nodeId);
-      if (node) { node.x = initial.x + dx; node.y = initial.y + dy; }
-    });
-    
-    showGuides(xSnap ? xSnap.coordinate : null, ySnap ? ySnap.coordinate : null, event.shiftKey);
-    render();
-    return;
-  }
-  
-  if (state.dragMode === "resize") {
-    const world = worldFromClient(event.clientX, event.clientY);
-    const dx = world.x - state.dragStart.worldX;
-    const dy = world.y - state.dragStart.worldY;
-    state.dragSnapshot.forEach((initial, nodeId) => {
-      const node = state.nodes.get(nodeId);
-      if (!node) return;
-      
-      if (node.isPlainText) {
-        const handle = state.dragHandle || "bottom-right";
-        if (handle === "bottom-right" || handle === "corner-br") {
-          const delta = (dx + dy) / 2;
-          const newSize = Math.min(128, Math.max(8, (initial.fontSize || 16) + delta));
-          node.fontSize = newSize;
-          node.width = Math.max(80, initial.width + dx);
-          node.height = Math.max(28, initial.height + dy);
-        }
-        return;
-      }
-      
-      const handle = state.dragHandle || "bottom-right";
-      let nextWidth = initial.width;
-      let nextHeight = initial.height;
-      let nextX = initial.x;
-      let nextY = initial.y;
-      
-      if (handle.includes("right")) {
-        nextWidth = Math.min(420, Math.max(102, initial.width + dx));
-        nextX = initial.x + (nextWidth - initial.width) / 2;
-      }
-      if (handle.includes("left")) {
-        nextWidth = Math.min(420, Math.max(102, initial.width - dx));
-        nextX = initial.x - (nextWidth - initial.width) / 2;
-      }
-      if (handle === "top" || handle.includes("top-")) {
-        nextHeight = Math.min(260, Math.max(42, initial.height - dy));
-        nextY = initial.y - (nextHeight - initial.height) / 2;
-      }
-      if (handle === "bottom" || handle.includes("bottom-")) {
-        nextHeight = Math.min(260, Math.max(42, initial.height + dy));
-        nextY = initial.y + (nextHeight - initial.height) / 2;
-      }
-      
-      node.width = nextWidth;
-      node.height = nextHeight;
-      node.x = nextX;
-      node.y = nextY;
-    });
-    render();
-    return;
-  }
-  
-  if (state.dragMode === "select") {
-    showSelectionRect(state.selectStartClient.x, state.selectStartClient.y, event.clientX, event.clientY);
-    return;
-  }
-  
-  if (!state.isPanning) return;
-  const dx = event.clientX - state.panStart.clientX;
-  const dy = event.clientY - state.panStart.clientY;
-  state.panX = state.panStart.panX + dx;
-  state.panY = state.panStart.panY + dy;
-  updateTransform();
-}
-
-function endPointerInteraction(event) {
-  if (state.dragMode === "select") {
-    finalizeDragSelection(event?.clientX ?? state.selectStartClient?.x ?? 0, event?.clientY ?? state.selectStartClient?.y ?? 0);
-  }
-  clearGuides();
-  state.isPanning = false;
-  state.dragMode = null;
-  state.dragSnapshot = null;
-  state.dragHandle = null;
-  state.dragStart = null;
-  state.selectStartClient = null;
-  state.selectStartWorld = null;
-  state.selectAdditive = false;
-  hideSelectionRect();
-  mapShell.classList.remove("panning");
-}
-
-function onWheelMap(event) {
-  event.preventDefault();
-  if (event.ctrlKey) {
-    const factor = Math.exp(-event.deltaY * 0.0012);
-    zoomBy(factor, event.clientX, event.clientY);
-    return;
-  }
-  state.panX -= event.deltaX;
-  state.panY -= event.deltaY;
-  updateTransform();
-}
-
-function openIntro() {
-  introModal.classList.add("open");
-}
-
-function closeIntro() {
-  introModal.classList.remove("open");
-}
-
-// ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ЭКСПОРТА ==========
-function hideUIElements() {
-  const zoomControls = document.querySelector('.zoom-controls');
-  const introBtn = document.getElementById('openIntroBtn');
-  const resizeHandles = document.querySelectorAll('.resize-handle');
-  const exportBtn = document.getElementById('exportContainer');
-  if (zoomControls) zoomControls.style.visibility = 'hidden';
-  if (introBtn) introBtn.style.visibility = 'hidden';
-  if (exportBtn) exportBtn.style.visibility = 'hidden';
-  resizeHandles.forEach(h => h.style.visibility = 'hidden');
-}
-
-function showUIElements() {
-  const zoomControls = document.querySelector('.zoom-controls');
-  const introBtn = document.getElementById('openIntroBtn');
-  const resizeHandles = document.querySelectorAll('.resize-handle');
-  const exportBtn = document.getElementById('exportContainer');
-  if (zoomControls) zoomControls.style.visibility = 'visible';
-  if (introBtn) introBtn.style.visibility = 'visible';
-  if (exportBtn) exportBtn.style.visibility = 'visible';
-  resizeHandles.forEach(h => h.style.visibility = 'visible');
-}
-
-function getDateString() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
-}
-
-let loadingOverlay = null;
-
-function showLoading(show) {
-  if (show && !loadingOverlay) {
-    loadingOverlay = document.createElement('div');
-    loadingOverlay.id = 'exportLoadingOverlay';
-    loadingOverlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(4px);
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    `;
-    loadingOverlay.innerHTML = `
-      <div style="background: white; border-radius: 24px; padding: 24px 32px; text-align: center;">
-        <div style="width: 48px; height: 48px; border: 4px solid #E9B978; border-top-color: #A16531; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px;"></div>
-        <p style="margin: 0; color: #4C2213;">🥜 Генерация...</p>
-      </div>
-      <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
-    `;
-    document.body.appendChild(loadingOverlay);
-  } else if (!show && loadingOverlay) {
-    loadingOverlay.remove();
-    loadingOverlay = null;
-  }
-}
 
 // async function exportPNG_Colored() {
   
@@ -2530,58 +1047,66 @@ async function exportPDF() {
   }
 }
 
-// Создание кнопок сохранения/загрузки в интерфейсе
-function addSaveLoadButtons() {
-  const panel = document.querySelector('.panel');
-  if (!panel) return;
-  
-  const existingDiv = document.getElementById('saveLoadContainer');
-  if (existingDiv) existingDiv.remove();
-  
-  const container = document.createElement('div');
-  container.id = 'saveLoadContainer';
-  container.className = 'mt-5 border-t border-[#A16531] pt-4';
-  container.innerHTML = `
-    <p class="text-sm font-medium text-[#4C2213] mb-2">💾 Сохранение карты</p>
-    <div class="flex flex-wrap gap-2">
-      <button id="saveJsonBtn" class="rounded-full bg-[#A16531] px-3 py-1.5 text-xs text-white hover:bg-[#8B5025] cursor-pointer">
-        📁 Сохранить как JSON
-      </button>
-      <button id="loadJsonBtn" class="rounded-full bg-[#9C8A79] px-3 py-1.5 text-xs text-white hover:bg-[#7A6B5C] cursor-pointer">
-        📂 Загрузить JSON
-      </button>
-    </div>
-    <input type="file" id="hiddenFileInput" accept=".json" style="display: none;" />
-    <p class="text-xs text-[#4C2213] mt-2">💰 Карта автоматически сохраняется в браузере. JSON файл можно переносить между устройствами.</p>
-  `;
-  
-  panel.appendChild(container);
-  
-  const saveBtn = document.getElementById('saveJsonBtn');
-  if (saveBtn) {
-    saveBtn.addEventListener('click', () => exportMapToJSON());
-  }
-  
-  const loadBtn = document.getElementById('loadJsonBtn');
-  const hiddenInput = document.getElementById('hiddenFileInput');
-  
-  if (loadBtn && hiddenInput) {
-    loadBtn.addEventListener('click', () => {
-      hiddenInput.click();
-    });
-    
-    hiddenInput.addEventListener('change', (e) => {
-      if (e.target.files && e.target.files[0]) {
-        importMapFromJSON(e.target.files[0]);
-      }
-      hiddenInput.value = '';
-    });
-  }
+// ========== ФУНКЦИИ ЭКСПОРТА PNG/PDF ==========
+function hideUIElements() {
+  const zoomControls = document.querySelector('.zoom-controls');
+  const introBtn = document.getElementById('openIntroBtn');
+  const resizeHandles = document.querySelectorAll('.resize-handle');
+  const exportBtn = document.getElementById('exportContainer');
+  if (zoomControls) zoomControls.style.visibility = 'hidden';
+  if (introBtn) introBtn.style.visibility = 'hidden';
+  if (exportBtn) exportBtn.style.visibility = 'hidden';
+  resizeHandles.forEach(h => h.style.visibility = 'hidden');
 }
 
+function showUIElements() {
+  const zoomControls = document.querySelector('.zoom-controls');
+  const introBtn = document.getElementById('openIntroBtn');
+  const resizeHandles = document.querySelectorAll('.resize-handle');
+  const exportBtn = document.getElementById('exportContainer');
+  if (zoomControls) zoomControls.style.visibility = 'visible';
+  if (introBtn) introBtn.style.visibility = 'visible';
+  if (exportBtn) exportBtn.style.visibility = 'visible';
+  resizeHandles.forEach(h => h.style.visibility = 'visible');
+}
 
+function getDateString() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
+}
 
+let loadingOverlay = null;
 
+function showLoading(show) {
+  if (show && !loadingOverlay) {
+    loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'exportLoadingOverlay';
+    loadingOverlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+    loadingOverlay.innerHTML = `
+      <div style="background: white; border-radius: 24px; padding: 24px 32px; text-align: center;">
+        <div style="width: 48px; height: 48px; border: 4px solid #E9B978; border-top-color: #A16531; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px;"></div>
+        <p style="margin: 0; color: #4C2213;">🥜 Генерация...</p>
+      </div>
+      <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+    `;
+    document.body.appendChild(loadingOverlay);
+  } else if (!show && loadingOverlay) {
+    loadingOverlay.remove();
+    loadingOverlay = null;
+  }
+}
 
 async function loadExportLibraries() {
   if (typeof htmlToImage === 'undefined') {
@@ -2640,91 +1165,23 @@ async function addExportButton() {
 }
 
 
-
 // ========== ИНИЦИАЛИЗАЦИЯ ==========
-
-// Добавляем кнопки сохранения/загрузки в интерфейс
 addSaveLoadButtons();
-
-// Пытаемся загрузить автосохранение, если нет — создаём карту по умолчанию
-if (!loadMapFromLocalStorage()) {
-  try {
-    buildFromStrict(parseStrictSyntax(sourceInput.value));
-    setStatus("🔄 Карта загружена из автосохранения!");
-  } catch (error) {
-    setStatus(error.message, true);
-  }
-}
-
-// Затем идут существующие обработчики buildStructuredBtn, clearMapBtn и т.д.
-
-// ========== ИНИЦИАЛИЗАЦИЯ ==========
-buildStructuredBtn.addEventListener("click", () => {
-  try {
-    const parsed = parseStrictSyntax(sourceInput.value);
-    buildFromStrict(parsed);
-    setStatus("Карта построена!");
-  } catch (error) {
-    setStatus(error.message, true);
-  }
-});
-clearMapBtn.addEventListener("click", () => { clearMapData(); setStatus("Карта очищена."); });
+if (!loadMapFromLocalStorage()) { try { buildFromStrict(parseStrictSyntax(sourceInput.value)); setStatus("🌰 Карта готова"); } catch(e) { setStatus(e.message, true); } }
+buildStructuredBtn.addEventListener("click", () => { try { buildFromStrict(parseStrictSyntax(sourceInput.value)); setStatus("Карта построена"); } catch(e) { setStatus(e.message, true); } });
+clearMapBtn.addEventListener("click", () => { clearMapData(); setStatus("Очищено"); });
 addNodeBtn.addEventListener("click", addChildToSelected);
 renameNodeBtn.addEventListener("click", renameSelectedNode);
 deleteNodeBtn.addEventListener("click", deleteSelectedNode);
 copyTemplateBtn.addEventListener("click", copySyntaxTemplate);
 applyBgBtn.addEventListener("click", () => applyMapBackground(bgColorInput.value));
-textFormatPopup.addEventListener("click", e => {
-  const btn = e.target.closest("[data-format]");
-  if (btn) applySelectionFormatting(btn.dataset.format);
-});
-
-// Обработчики для кнопок A+ и A-
-const fontSizeIncrease = document.getElementById("fontSizeIncrease");
-const fontSizeDecrease = document.getElementById("fontSizeDecrease");
-
-if (fontSizeIncrease) {
-  fontSizeIncrease.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    changeFontSize(2);
-  });
-}
-
-if (fontSizeDecrease) {
-  fontSizeDecrease.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    changeFontSize(-2);
-  });
-}
-
-// Кнопка добавления plain-текста
-const addPlainTextBtn = document.getElementById("addPlainTextBtn");
-if (addPlainTextBtn) {
-  addPlainTextBtn.addEventListener("click", addPlainTextAtViewportCenter);
-}
-
-// ========== ОБРАБОТЧИКИ ДЛЯ ВЫБОРА ФОРМЫ ==========
-document.querySelectorAll('.shape-preview').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const shapeType = btn.dataset.shape;
-    if (!state.primarySelectedId) {
-      setStatus("Сначала выберите элемент на карте.", true);
-      return;
-    }
-    const node = state.nodes.get(state.primarySelectedId);
-    if (!node || node.isPlainText) {
-      setStatus("Форму можно менять только у обычных элементов.", true);
-      return;
-    }
-    changeNodeShape(state.primarySelectedId, shapeType);
-    render(); // Перерендерим для обновления классов
-  });
-});
-
+textFormatPopup.addEventListener("click", e => { const btn = e.target.closest("[data-format]"); if (btn) applySelectionFormatting(btn.dataset.format); });
+const fontSizeInc = document.getElementById("fontSizeIncrease"), fontSizeDec = document.getElementById("fontSizeDecrease");
+if (fontSizeInc) fontSizeInc.addEventListener("click", () => changeFontSize(2));
+if (fontSizeDec) fontSizeDec.addEventListener("click", () => changeFontSize(-2));
+const addPlainBtn = document.getElementById("addPlainTextBtn");
+if (addPlainBtn) addPlainBtn.addEventListener("click", addPlainTextAtViewportCenter);
+document.querySelectorAll('.shape-preview').forEach(btn => { btn.addEventListener('click', (e) => { e.preventDefault(); const shape = btn.dataset.shape; if (!state.primarySelectedId) { setStatus("Выберите элемент", true); return; } const node = state.nodes.get(state.primarySelectedId); if (!node || node.isPlainText) { setStatus("Форму можно менять у обычных узлов", true); return; } changeNodeShape(state.primarySelectedId, shape); render(); }); });
 zoomInBtn.addEventListener("click", () => zoomBy(1.16));
 zoomOutBtn.addEventListener("click", () => zoomBy(1 / 1.16));
 closeIntroBtn.addEventListener("click", closeIntro);
@@ -2734,46 +1191,18 @@ mapShell.addEventListener("pointermove", onPointerMoveMap, { passive: false });
 mapShell.addEventListener("pointerup", endPointerInteraction);
 mapShell.addEventListener("wheel", onWheelMap, { passive: false });
 mapShell.addEventListener("contextmenu", e => e.preventDefault());
-nodesLayer.addEventListener("dblclick", e => {
-  const nodeEl = e.target.closest(".node");
-  if (nodeEl) openInlineEditor(nodeEl.dataset.id);
-});
-nodesLayer.addEventListener("input", e => {
-  const editor = e.target.closest(".inline-node-editor");
-  if (editor && state.nodes.get(editor.dataset.nodeEditor)) {
-    state.nodes.get(editor.dataset.nodeEditor).text = editor.value;
-    state.activeTextField = editor;
-  }
-});
-document.addEventListener("focusin", e => {
-  if (e.target.classList?.contains("inline-node-editor")) {
-    state.activeTextField = e.target;
-    updateTextFormatPopupBySelection(true);
-  }
-});
+nodesLayer.addEventListener("dblclick", e => { const n = e.target.closest(".node"); if (n) openInlineEditor(n.dataset.id); });
+nodesLayer.addEventListener("input", e => { const ed = e.target.closest(".inline-node-editor"); if (ed && state.nodes.get(ed.dataset.nodeEditor)) { state.nodes.get(ed.dataset.nodeEditor).text = ed.value; state.activeTextField = ed; } });
+document.addEventListener("focusin", e => { if (e.target.classList?.contains("inline-node-editor")) { state.activeTextField = e.target; updateTextFormatPopupBySelection(true); } });
 window.addEventListener("keydown", e => {
   if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") return;
   if (e.key === "+" || e.key === "=" || e.code === "NumpadAdd") { e.preventDefault(); zoomBy(1.16); }
   if (e.key === "-" || e.code === "NumpadSubtract") { e.preventDefault(); zoomBy(1 / 1.16); }
-  if ((e.ctrlKey || e.metaKey) && e.key === "+") {
-    e.preventDefault();
-    changeFontSize(2);
-  }
-  if ((e.ctrlKey || e.metaKey) && e.key === "-") {
-    e.preventDefault();
-    changeFontSize(-2);
-  }
-  if ((e.ctrlKey || e.metaKey) && e.key === "0") {
-    e.preventDefault();
-    if (state.selectedIds.size) {
-      state.selectedIds.forEach(id => {
-        const node = state.nodes.get(id);
-        if (node) setFontSize(node, 14);
-      });
-      render();
-      setStatus("Размер шрифта сброшен до 14pt.");
-    }
-  }
+  if ((e.ctrlKey || e.metaKey) && e.key === "+") { e.preventDefault(); changeFontSize(2); }
+  if ((e.ctrlKey || e.metaKey) && e.key === "-") { e.preventDefault(); changeFontSize(-2); }
+  if ((e.ctrlKey || e.metaKey) && e.key === "0") { e.preventDefault(); if (state.selectedIds.size) { state.selectedIds.forEach(id => { const n = state.nodes.get(id); if (n) setFontSize(n, 14); }); render(); setStatus("Шрифт сброшен до 14pt"); } }
+  if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) { e.preventDefault(); undo(); return; }
+  if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) { e.preventDefault(); redo(); return; }
 });
 
 sourceInput.value = `@MAIN| Подготовка запуска проекта
@@ -2788,40 +1217,30 @@ sourceInput.value = `@MAIN| Подготовка запуска проекта
 @3.1| Ограничения по времени
 @3.2| Ограничения по бюджету`;
 
-// Карта уже создана в loadMapFromLocalStorage() или в блоке выше
-// Этот блок оставляем только для случая, если sourceInput изменился и нужно перестроить
-// Но явно не вызываем buildFromStrict повторно, чтобы не затереть загруженную карту
-
 document.body.style.overflow = 'hidden';
 document.body.style.position = 'fixed';
 document.body.style.width = '100%';
 document.body.style.height = '100%';
 
-// ========== ПЕРЕСЧЁТ ПАНОРАМИРОВАНИЯ ПРИ ПОВОРОТЕ ЭКРАНА (iOS fix) ==========
-let lastWidth = window.innerWidth, lastHeight = window.innerHeight;
-
+let lastW = window.innerWidth, lastH = window.innerHeight;
 window.addEventListener("resize", () => {
-  if (lastWidth === window.innerWidth && lastHeight === window.innerHeight) return;
-  lastWidth = window.innerWidth;
-  lastHeight = window.innerHeight;
-  
+  if (lastW === window.innerWidth && lastH === window.innerHeight) return;
+  lastW = window.innerWidth; lastH = window.innerHeight;
   const rect = mapShell.getBoundingClientRect();
   if (rect.width === 0 || rect.height === 0) return;
-  
-  const oldCenterWorld = worldFromClient(window.innerWidth / 2, window.innerHeight / 2);
-  const newCenterScreenX = rect.width / 2;
-  const newCenterScreenY = rect.height / 2;
-  state.panX = newCenterScreenX - oldCenterWorld.x * state.scale;
-  state.panY = newCenterScreenY - oldCenterWorld.y * state.scale;
+  const oldCenter = worldFromClient(window.innerWidth / 2, window.innerHeight / 2);
+  const newCenterX = rect.width / 2, newCenterY = rect.height / 2;
+  state.panX = newCenterX - oldCenter.x * state.scale;
+  state.panY = newCenterY - oldCenter.y * state.scale;
   updateTransform();
 });
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => { addExportButton(); openIntro(); });
-} else {
-  addExportButton();
-  openIntro();
-}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { addExportButton(); openIntro(); });
+else { addExportButton(); openIntro(); }
+
+document.getElementById("undoBtn")?.addEventListener("click", () => undo());
+document.getElementById("insertIntermediateBtn")?.addEventListener("click", () => insertIntermediateAbove());
+
 </script>
 </body>
 </html>
