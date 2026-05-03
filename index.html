@@ -78,6 +78,230 @@
     .node.plain-text.selected .resize-handle::after { opacity: 0.7; width: 10px; height: 10px; font-size: 8px; }
     .node .node-label, .node .inline-node-editor { transition: font-size 0.1s ease; }
     #fontSizeValue { background: rgba(162, 101, 49, 0.15); padding: 4px 8px; border-radius: 20px; font-weight: 500; min-width: 45px; text-align: center; }
+
+/* ========== СТИЛИ ДЛЯ ШАБЛОНОВ ========== */
+.template-dropdown {
+  position: absolute;
+  background: #FFF8F0;
+  border: 1px solid var(--almond-terra);
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  min-width: 220px;
+  z-index: 100;
+  display: none;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+}
+.template-dropdown.show { display: block; }
+.template-group {
+  padding: 8px 0;
+}
+.template-group-header {
+  padding: 6px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--almond-terra);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(162,101,49,0.2);
+}
+.template-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  transition: background 0.1s;
+}
+.template-item:hover { background: rgba(162,101,49,0.1); }
+.template-item.delete { color: #c0392b; }
+.template-item.delete:hover { background: rgba(192,57,43,0.1); }
+.template-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+}
+.template-modal.open { display: flex; }
+.template-modal-panel {
+  background: #FFF8F0;
+  border-radius: 24px;
+  border: 1px solid var(--almond-terra);
+  width: min(400px, calc(100vw - 32px));
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.template-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(162,101,49,0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.template-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--almond-terra);
+}
+.template-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--almond-terra);
+}
+.template-modal-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+.template-modal-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(162,101,49,0.1);
+}
+.template-modal-item-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+.template-modal-item-date {
+  font-size: 10px;
+  color: #9C8A79;
+  margin-left: 10px;
+}
+.template-modal-item-delete {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.1s;
+}
+.template-modal-item-delete:hover { opacity: 1; }
+.template-modal-footer {
+  padding: 16px;
+  border-top: 1px solid rgba(162,101,49,0.2);
+  display: flex;
+  gap: 10px;
+}
+.template-modal-footer button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 40px;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+}
+.template-save-btn {
+  background: var(--almond-terra);
+  color: white;
+}
+.template-cancel-btn {
+  background: #e0d6c8;
+  color: var(--almond-dark);
+}
+
+/* Стили для заметок-стикеров */
+.node.sticker {
+  background: #FFF9C4;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.1s ease;
+  min-width: 160px;
+  min-height: 120px;
+  padding: 16px 12px;
+  border: 1px solid rgba(0,0,0,0.08);
+  font-family: "Georgia", "Times New Roman", serif;
+}
+
+/* Эффект оторванного уголка */
+.node.sticker::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 25px;
+  height: 25px;
+  background: linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.06) 50%);
+  border-bottom-right-radius: inherit;
+  pointer-events: none;
+}
+
+/* Наклон при наведении */
+.node.sticker:hover {
+  transform: translate(-50%, -50%) rotate(1deg) scale(1.02);
+}
+
+/* Текст внутри стикера */
+.node.sticker .node-label {
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #3E2723;
+  text-align: left;
+  display: block;
+  white-space: pre-wrap;
+}
+
+/* Редактор внутри заметки */
+.node.sticker .inline-node-editor {
+  background: #FFFEF5;
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #3E2723;
+  border: 1px solid #E0C8A0;
+  border-radius: 8px;
+}
+
+
+/* Большая палитра цветов для стикеров */
+#stickerColorPalette {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.sticker-color-btn {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  border-radius: 12px;
+  border: 2px solid var(--almond-choco);
+  cursor: var(--almond-cursor);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.sticker-color-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.sticker-color-btn.active {
+  border-color: var(--almond-terra);
+  outline: 3px solid var(--almond-terra);
+  outline-offset: 2px;
+  transform: scale(1.08);
+}
+
+/* Анимация появления блока */
+#stickerColorBlock {
+  transition: opacity 0.2s ease;
+}
+
   </style>
 </head>
 <body>
@@ -93,6 +317,70 @@
     <div class="mt-3 flex flex-wrap gap-2"><button id="buildStructured" class="rounded-full bg-[#A16531] px-5 py-2 text-sm font-medium text-white hover:bg-[#8B5025] cursor-pointer">🌰 Собрать карту</button></div>
     <div class="mt-2 flex flex-wrap gap-2"><button id="clearMap" class="rounded-full bg-[#9C8A79] px-5 py-2 text-sm font-medium text-white hover:bg-[#7A6B5C] cursor-pointer">Очистить</button></div>
     <div class="mt-2 flex flex-wrap gap-2"><button id="undoBtn" class="rounded-full bg-[#737373] px-5 py-2 text-sm font-medium text-white hover:bg-[#525252] cursor-pointer">↩️ Отменить</button></div>
+
+
+<div class="mt-2 flex flex-wrap gap-2">
+  <button id="createRootBtn" class="rounded-full bg-[#A16531] px-5 py-2 text-sm font-medium text-white hover:bg-[#8B5025] cursor-pointer">➕ Создать основу</button>
+</div>
+
+
+
+<!-- ========== БЛОК ШАБЛОНОВ ========== -->
+<div class="mt-4 border-t border-[#A16531] pt-3">
+  <div class="flex items-center justify-between">
+    <span class="text-sm font-medium text-[#4C2213]">📁 Шаблоны</span>
+    <button id="templatesManageBtn" class="text-sm text-[#9C8A79] hover:text-[#A16531]" title="Управление шаблонами">⚙️</button>
+  </div>
+  <div class="mt-2 flex gap-2 relative">
+    <button id="saveTemplateBtn" class="rounded-full bg-[#A16531] px-4 py-1.5 text-xs text-white hover:bg-[#8B5025]">💾 Сохранить</button>
+    <div class="relative">
+      <button id="loadTemplateBtn" class="rounded-full bg-[#9C8A79] px-4 py-1.5 text-xs text-white hover:bg-[#7A6B5C]">📂 Загрузить ▼</button>
+      <div id="templateDropdown" class="template-dropdown">
+        <div class="template-group">
+          <div class="template-group-header">🌰 Встроенные</div>
+          <div class="template-item" data-template="roadmap">📊 Roadmap (дорожная карта)</div>
+          <div class="template-item" data-template="swot">🔍 SWOT анализ</div>
+          <div class="template-item" data-template="brainstorm">💡 Brainstorm</div>
+        </div>
+        <div class="template-group" id="myTemplatesGroup">
+          <div class="template-group-header">📂 Мои шаблоны</div>
+          <div id="myTemplatesList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== МОДАЛЬНОЕ ОКНО УПРАВЛЕНИЯ ШАБЛОНАМИ ========== -->
+<div id="templatesModal" class="template-modal">
+  <div class="template-modal-panel">
+    <div class="template-modal-header">
+      <span class="template-modal-title">📁 Управление шаблонами</span>
+      <button class="template-modal-close" id="templatesModalClose">&times;</button>
+    </div>
+    <div class="template-modal-list" id="templatesModalList">
+      <div class="template-group-header">🌰 Встроенные (только для загрузки)</div>
+      <div class="template-modal-item">
+        <span>📊 Roadmap (дорожная карта)</span>
+        <button class="template-modal-item-delete" data-template-load="roadmap" style="opacity:0.5; cursor:pointer;">📂</button>
+      </div>
+      <div class="template-modal-item">
+        <span>🔍 SWOT анализ</span>
+        <button class="template-modal-item-delete" data-template-load="swot" style="opacity:0.5; cursor:pointer;">📂</button>
+      </div>
+      <div class="template-modal-item">
+        <span>💡 Brainstorm</span>
+        <button class="template-modal-item-delete" data-template-load="brainstorm" style="opacity:0.5; cursor:pointer;">📂</button>
+      </div>
+      <div class="template-group-header" style="margin-top:12px;">📂 Мои шаблоны</div>
+      <div id="templatesModalMyList"></div>
+    </div>
+    <div class="template-modal-footer">
+      <button class="template-cancel-btn" id="templatesModalCancel">Закрыть</button>
+    </div>
+  </div>
+</div>
+
 
     <div class="mt-3 rounded-2xl border border-[#A16531] bg-[#FFF8F0] p-3"><label class="block text-sm font-medium text-[#4C2213]">🎨 Фон рабочей области</label><div class="mt-2 flex items-center gap-2"><input id="bgColorInput" type="color" value="#E9B978" class="h-10 w-10 rounded border border-[#A16531] cursor-pointer" /><button id="applyBgBtn" class="rounded-full bg-[#A16531] px-4 py-2 text-sm text-white cursor-pointer">Применить</button></div></div>
 
@@ -118,15 +406,56 @@
 
       <label class="block mt-3 text-sm font-medium text-[#4C2213]">🎨 Цвет элемента</label>
       <div id="palette" class="mt-2 flex gap-2 flex-wrap"></div>
+
+<div id="stickerColorBlock" class="mt-4 pt-3 border-t border-[#A16531]" style="display: none;">
+  <label class="block text-sm font-medium text-[#4C2213] mb-2">📌 Цвет стикера (заметки)</label>
+  <div id="stickerColorPalette" class="mt-2 grid grid-cols-6 gap-2"></div>
+  <p class="text-xs text-[#9C8A79] mt-2">✨ Выберите цвет для текущей заметки</p>
+</div>
+
       <button id="deleteNode" class="mt-4 rounded-full bg-[#4C2213] px-4 py-2 text-sm text-white hover:bg-[#3A1A0E] cursor-pointer">🗑 Удалить</button>
     </div>
 
-    <div class="hint-box mt-5 p-3">
-      <p class="text-sm font-semibold text-[#A16531]">📋 Формат для ИИ (скопируйте в ChatGPT)</p>
-      <textarea id="syntaxTemplate" readonly class="mt-2 w-full h-48 rounded-xl border border-[#A16531] bg-[#FFF8F0] p-2 text-xs text-[#250905]">Ты — помощник для создания ментальных карт в формате Миндальные карты. ПРЕОБРАЗУЙ СЛЕДУЮЩИЙ ТЕКСТ В СТРОГИЙ ФОРМАТ: @MAIN| [Главная тема] @1| [Первая ветка] ...</textarea>
-      <button id="copyTemplate" class="mt-2 rounded-full bg-[#A16531] px-4 py-2 text-xs text-white cursor-pointer">📋 Копировать шаблон</button>
-    </div>
-    <p id="status" class="mt-4 text-xs text-[#4C2213]"></p>
+
+
+   <div class="hint-box mt-5 p-3">
+  <p class="text-sm font-semibold text-[#A16531]">📋 Формат для ИИ (скопируйте в ChatGPT)</p>
+  <textarea id="syntaxTemplate" readonly class="mt-2 w-full h-48 rounded-xl border border-[#A16531] bg-[#FFF8F0] p-2 text-xs text-[#250905]">🥜 Миндальные карты — помощник для создания ментальных карт
+
+ПРЕОБРАЗУЙ СЛЕДУЮЩИЙ ТЕКСТ В СТРОГИЙ ФОРМАТ:
+
+@MAIN| [Главная тема]
+@1| [Первая ветка]
+@1.1| [Подветка]
+@1.2| [Подветка]
+@2| [Вторая ветка]
+@2.1| [Подветка]
+
+ПРАВИЛА:
+- @MAIN| — только одна строка, самая первая (главная идея)
+- @1, @2, @3... — ветки первого уровня
+- @1.1, @1.2, @2.1... — подветки (можно до 4 уровней: @1.2.3.4)
+- Текст после | до 75 символов
+- Не добавляй пояснений, только формат
+- Используй эмодзи для наглядности (📌, 🎯, ✅, 📊 и т.д.)
+
+МОЙ ТЕКСТ ДЛЯ ПРЕОБРАЗОВАНИЯ:
+[ВСТАВЬТЕ СВОЙ КОНСПЕКТ ЗДЕСЬ]
+
+Пример:
+@MAIN| 🚀 Запуск стартапа
+@1| 📊 Анализ рынка
+@1.1| Конкуренты
+@1.2| Целевая аудитория
+@2| 🛠 Разработка продукта
+@2.1| MVP
+@2.2| Тестирование
+@3| 💰 Финансы
+@3.1| Бюджет
+@3.2| Инвесторы</textarea>
+  <button id="copyTemplate" class="mt-2 rounded-full bg-[#A16531] px-4 py-2 text-xs text-white cursor-pointer">📋 Копировать шаблон</button>
+</div>
+<p id="status" class="mt-4 text-xs text-[#4C2213]"></p>
   </aside>
 
   <main class="flex-1 relative">
@@ -141,6 +470,8 @@
 
 <div id="introModal" class="onboarding-modal"><div class="onboarding-panel"><h2 class="text-xl font-semibold text-[#A16531]">🥜 Добро пожаловать в Миндальные карты</h2><ul class="mt-3 list-disc pl-5 text-[#4C2213] space-y-2"><li>Вставьте конспект → «Собрать карту»</li><li>🥜 Перетаскивайте узлы, меняйте размер (8 хендлов)</li><li>Двойной клик по узлу — редактирование текста с B/I/U</li><li><strong>Новое!</strong> Кнопка «↩️ Отменить» — отмена действий (Ctrl+Z)</li><li><strong>Новое!</strong> Кнопка «🔁 Вставить промежуточный»</li><li>Ctrl/Cmd + / - для изменения размера шрифта, Ctrl+0 для сброса</li><li>Shift + выделение нескольких узлов, Shift при перетаскивании — отключает прилипание</li><li>Экспорт — кнопка 📸 справа вверху</li></ul><button id="closeIntroBtn" class="mt-5 w-full rounded-full bg-[#A16531] text-white py-2 cursor-pointer">🌰 Понятно</button></div></div>
 
+
+
 <div id="textFormatPopup" class="text-format-popup">
   <button data-format="b" class="format-btn"><strong>B</strong></button><button data-format="i" class="format-btn"><em>I</em></button><button data-format="u" class="format-btn"><span style="text-decoration:underline;">U</span></button>
   <div style="width:1px; height:30px; background:#A16531; margin:0 4px; opacity:0.3;"></div>
@@ -148,9 +479,46 @@
   <span id="fontSizeValue" style="font-size:12px;">16pt</span>
 </div>
 
+
 <script>
 // ======================== МИНДАЛЬНАЯ ПАЛИТРА ========================
 const paletteColors = ["#A16531", "#E9B978", "#9C8A79", "#4C2213", "#F5DEB3", "#250905", "#675E49", "#EEDCC6"];
+
+// ======================== БОЛЬШАЯ ПАЛИТРА ДЛЯ СТИКЕРОВ ========================
+const stickerColorPalette = [
+  // ⚪ Белый и оттенки серого (ЧБ)
+  "#FFFFFF", "#F5F5F5", "#E0E0E0", "#BDBDBD", "#9E9E9E", "#757575", "#616161", "#424242", "#212121", "#000000",
+  
+  // 🔴 Красный и оттенки
+  "#FFEBEE", "#FFCDD2", "#EF9A9A", "#E57373", "#EF5350", "#F44336", "#E53935", "#D32F2F", "#C62828", "#B71C1C",
+  
+  // 🟠 Оранжевый / Рыжий
+  "#FFF3E0", "#FFE0B2", "#FFCC80", "#FFB74D", "#FFA726", "#FF9800", "#FB8C00", "#F57C00", "#EF6C00", "#E65100",
+  
+  // 🟡 Жёлтый
+  "#FFFDE7", "#FFF9C4", "#FFF59D", "#FFF176", "#FFEE58", "#FFEB3B", "#FDD835", "#FBC02D", "#F9A825", "#F57F17",
+  
+  // 🟢 Зелёный
+  "#E8F5E9", "#C8E6C9", "#A5D6A7", "#81C784", "#66BB6A", "#4CAF50", "#43A047", "#388E3C", "#2E7D32", "#1B5E20",
+  
+  // 💚 Мятный / Бирюзовый
+  "#E0F2F1", "#B2DFDB", "#80CBC4", "#4DB6AC", "#26A69A", "#009688", "#00897B", "#00796B", "#00695C", "#004D40",
+  
+  // 💙 Голубой
+  "#E1F5FE", "#B3E5FC", "#81D4FA", "#4FC3F7", "#29B6F6", "#03A9F4", "#039BE5", "#0288D1", "#0277BD", "#01579B",
+  
+  // 🔵 Синий
+  "#E3F2FD", "#BBDEFB", "#90CAF9", "#64B5F6", "#42A5F5", "#2196F3", "#1E88E5", "#1976D2", "#1565C0", "#0D47A1",
+  
+  // 🟣 Фиолетовый
+  "#F3E5F5", "#E1BEE7", "#CE93D8", "#BA68C8", "#AB47BC", "#9C27B0", "#8E24AA", "#7B1FA2", "#6A1B9A", "#4A148C",
+  
+  // 🩷 Розовый
+  "#FCE4EC", "#F8BBD0", "#F48FB1", "#F06292", "#EC407A", "#E91E63", "#D81B60", "#C2185B", "#AD1457", "#880E4F",
+  
+  // 🤎 Коричневый / Бежевый
+  "#EFEBE9", "#D7CCC8", "#BCAAA4", "#A1887F", "#8D6E63", "#795548", "#6D4C41", "#5D4037", "#4E342E", "#3E2723"
+];
 
 // ======================== ВСЕ ПЕРЕМЕННЫЕ ========================
 const sourceInput = document.getElementById("sourceInput");
@@ -345,19 +713,400 @@ function clearGuides() { guideX.style.display = "none"; guideY.style.display = "
 
 // ========== ПАРСИНГ И ЛОГИКА (из твоего файла) ==========
 function parseStrictSyntax(inputText) { /* полная функция, я её сократил для краткости, но она есть в твоём файле */ const rows = inputText.split(/\r?\n/).map(x=>x.trim()).filter(Boolean); if(!rows.length) throw new Error("Введите текст."); const parsed = [], idRegistry = new Set(); let mainSeen = false; rows.forEach((row,idx)=>{ const match = row.match(/^@((?:MAIN)|(?:\d+(?:\.\d+)*))\|\s*(.+)$/i); if(!match) throw new Error(`Строка ${idx+1}: формат @ID| Текст.`); const token = match[1].toUpperCase(), text = match[2].trim(); if(!text) throw new Error(`Строка ${idx+1}: пустой текст.`); if(token==="MAIN") { if(idx!==0) throw new Error("@MAIN| первой строкой."); if(mainSeen) throw new Error("@MAIN| только один раз."); mainSeen = true; parsed.push({ token:"MAIN", parent:null, level:0, text }); idRegistry.add("MAIN"); } else { if(!mainSeen) throw new Error("Сначала @MAIN|."); if(idRegistry.has(token)) throw new Error(`Дублирование @${token}.`); const parts = token.split("."); const parentToken = parts.length===1 ? "MAIN" : parts.slice(0,-1).join("."); if(!idRegistry.has(parentToken)) throw new Error(`Родитель @${parentToken} должен быть раньше.`); idRegistry.add(token); parsed.push({ token, parent:parentToken, level:parts.length, text }); } }); if(!mainSeen) throw new Error("Не найдена @MAIN|."); return parsed; }
-function applyInitialLayout() { if(!state.rootId) return; const root = state.nodes.get(state.rootId); root.x = 0; root.y = 0; const topLevel = root.children, total = Math.max(topLevel.length,1); const start = -Math.PI*0.78, end = Math.PI*0.78, span = end-start; topLevel.forEach((id,index)=>{ const angle = total===1?0:start+(span*index)/(total-1); placeSubtree(id,1,angle,240,0.8); }); render(); }
-function placeSubtree(id,depth,angle,radius,spread) { const node = state.nodes.get(id); node.x = Math.cos(angle)*radius; node.y = Math.sin(angle)*radius; const children = node.children; if(!children.length) return; const nextSpread = Math.max(0.3,spread*0.8), start = angle-nextSpread, step = children.length===1?0:(nextSpread*2)/(children.length-1); children.forEach((childId,idx)=>{ const childAngle = children.length===1?angle:start+step*idx; placeSubtree(childId,depth+1,childAngle,radius+145+depth*20,nextSpread); }); }
+
+
+//древовидная расклада function applyInitialLayout
+
+
+// ========== ОРГАНИГРАММА (СВЕРХУ ВНИЗ) — С КОНТРОЛЕМ ПЕРЕСЕЧЕНИЙ ==========
+
+function applyInitialLayout() {
+  if (!state.rootId) return;
+  
+  // Корень — вверху по центру
+  const root = state.nodes.get(state.rootId);
+  root.x = 0;
+  root.y = -280;
+  
+  // Собираем все узлы по уровням для контроля пересечений
+  const levels = {};
+  
+  // Раскладываем первый уровень (основные ветки)
+  const mainBranches = root.children;
+  const totalMain = mainBranches.length;
+  const horizontalSpacingLevel1 = 320; // увеличил с 280 до 320
+  const startX = -((totalMain - 1) * horizontalSpacingLevel1) / 2;
+  const verticalStep1 = 180;
+  
+  // Для каждого узла первого уровня запоминаем его позицию и резервируем место
+  const level1Positions = [];
+  
+  mainBranches.forEach((childId, index) => {
+    const child = state.nodes.get(childId);
+    child.x = startX + (index * horizontalSpacingLevel1);
+    child.y = root.y + verticalStep1;
+    
+    level1Positions.push({
+      id: childId,
+      x: child.x,
+      minX: child.x - 110, // левая граница узла (с запасом)
+      maxX: child.x + 110  // правая граница узла (с запасом)
+    });
+    
+    // Раскладываем второй уровень (дочерние узлы)
+    const subNodes = child.children;
+    const totalSub = subNodes.length;
+    
+    // Горизонтальный шаг зависит от количества узлов, чтобы они не вылезали за родителя
+    const maxWidth = horizontalSpacingLevel1 - 60;
+    const horizontalSpacingLevel2 = totalSub > 1 ? Math.min(180, maxWidth / (totalSub - 1)) : 0;
+    const subStartX = child.x - ((totalSub - 1) * horizontalSpacingLevel2) / 2;
+    const verticalStep2 = 160;
+    
+    subNodes.forEach((subId, subIndex) => {
+      const subNode = state.nodes.get(subId);
+      let targetX = subStartX + (subIndex * horizontalSpacingLevel2);
+      
+      // Проверяем пересечение с соседними ветками (кузенами)
+      let needsShift = true;
+      let shiftCount = 0;
+      while (needsShift && shiftCount < 10) {
+        needsShift = false;
+        
+        // Проверяем пересечение с узлами других веток на том же уровне
+        for (let other of level1Positions) {
+          if (other.id === childId) continue;
+          
+          // Если узел другого родителя слишком близко
+          const otherNode = state.nodes.get(other.id);
+          if (otherNode && otherNode.children.length > 0) {
+            // Находим узлы второго уровня у соседней ветки
+            otherNode.children.forEach(otherChildId => {
+              const otherChild = state.nodes.get(otherChildId);
+              if (otherChild && Math.abs(otherChild.x - targetX) < 170) {
+                needsShift = true;
+                targetX += 30;
+              }
+            });
+          }
+        }
+        
+        shiftCount++;
+      }
+      
+      subNode.x = targetX;
+      subNode.y = child.y + verticalStep2;
+      
+      // Сохраняем позицию для проверки следующих уровней
+      if (!levels[2]) levels[2] = [];
+      levels[2].push({
+        id: subId,
+        parentId: childId,
+        x: targetX,
+        minX: targetX - 100,
+        maxX: targetX + 100
+      });
+      
+      // Третий уровень (если есть)
+      const thirdLevel = subNode.children;
+      const totalThird = thirdLevel.length;
+      const horizontalSpacingLevel3 = totalThird > 1 ? Math.min(140, 200 / (totalThird - 1)) : 0;
+      const thirdStartX = subNode.x - ((totalThird - 1) * horizontalSpacingLevel3) / 2;
+      const verticalStep3 = 140;
+      
+      thirdLevel.forEach((thirdId, thirdIndex) => {
+        const thirdNode = state.nodes.get(thirdId);
+        let thirdTargetX = thirdStartX + (thirdIndex * horizontalSpacingLevel3);
+        
+        // Проверяем пересечение с узлами соседних веток на третьем уровне
+        if (levels[3]) {
+          for (let existing of levels[3]) {
+            if (Math.abs(existing.x - thirdTargetX) < 160) {
+              thirdTargetX = existing.x + 160;
+            }
+          }
+        }
+        
+        thirdNode.x = thirdTargetX;
+        thirdNode.y = subNode.y + verticalStep3;
+        
+        if (!levels[3]) levels[3] = [];
+        levels[3].push({
+          id: thirdId,
+          parentId: subId,
+          x: thirdTargetX
+        });
+        
+        // Четвёртый уровень
+        const fourthLevel = thirdNode.children;
+        const totalFourth = fourthLevel.length;
+        if (totalFourth > 0) {
+          const horizontalSpacingLevel4 = totalFourth > 1 ? Math.min(120, 160 / (totalFourth - 1)) : 0;
+          const fourthStartX = thirdNode.x - ((totalFourth - 1) * horizontalSpacingLevel4) / 2;
+          const verticalStep4 = 130;
+          
+          fourthLevel.forEach((fourthId, fourthIndex) => {
+            const fourthNode = state.nodes.get(fourthId);
+            fourthNode.x = fourthStartX + (fourthIndex * horizontalSpacingLevel4);
+            fourthNode.y = thirdNode.y + verticalStep4;
+          });
+        }
+      });
+    });
+  });
+  
+  render();
+}
+
+
+
+
+
+
+
+
+
+
+
+
 function centerOnRoot() { const rect = mapShell.getBoundingClientRect(); state.panX = rect.width/2; state.panY = rect.height/2; state.scale = 1; updateTransform(); autoSave(); }
-function buildFromStrict(parsed) { clearMapData(); const tokenToNode = new Map(); parsed.forEach(item=>{ if(item.token==="MAIN"){ const rootId=createNode(item.text,null,0,0,paletteColors[0],false,"almond"); state.rootId=rootId; tokenToNode.set("MAIN",rootId); } else { const parentId=tokenToNode.get(item.parent); const color=paletteColors[(item.level+1)%paletteColors.length]; const nodeId=createNode(item.text,parentId,0,0,color,false,"almond"); tokenToNode.set(item.token,nodeId); } }); applyInitialLayout(); centerOnRoot(); setSelection([state.rootId],state.rootId); render(); }
+
+
+
+//function buildfromstrcit
+
+function buildFromStrict(parsed) {
+  clearMapData();
+  const tokenToNode = new Map();
+  
+  parsed.forEach((item) => {
+    if (item.token === "MAIN") {
+      // Корень — берём первый цвет палитры (индекс 0)
+      const rootColor = paletteColors[0];
+      const rootId = createNode(item.text, null, 0, 0, rootColor, false, "almond");
+      state.rootId = rootId;
+      tokenToNode.set("MAIN", rootId);
+      return;
+    }
+    
+    // Находим родителя
+    const parentId = tokenToNode.get(item.parent);
+    const parentNode = state.nodes.get(parentId);
+    
+    // Определяем цвет для узла:
+    let nodeColor;
+    
+    if (parentNode.id === state.rootId) {
+      // Если родитель — корень, берём цвета из палитры по порядку (начиная с индекса 1)
+      const rootChildren = state.nodes.get(state.rootId).children;
+      const childIndex = rootChildren.length; // сколько уже есть детей у корня (до добавления текущего)
+      const colorIndex = 1 + (childIndex % (paletteColors.length - 1));
+      nodeColor = paletteColors[colorIndex];
+    } else {
+      // Если родитель НЕ корень — наследуем цвет родителя
+      nodeColor = parentNode.color;
+    }
+    
+    const nodeId = createNode(item.text, parentId, 0, 0, nodeColor, false, "almond");
+    tokenToNode.set(item.token, nodeId);
+  });
+  
+  applyInitialLayout();
+  centerOnRoot();
+  setSelection([state.rootId], state.rootId);
+  render();
+}
+
+
 
 // ========== РЕНДЕРИНГ ==========
-function renderLines() { const parts = []; state.nodes.forEach(node=>{ if(node.isPlainText || !node.parentId) return; const parent=state.nodes.get(node.parentId); if(parent.isPlainText) return; const c1x=parent.x+(node.x-parent.x)*0.35, c1y=parent.y, c2x=parent.x+(node.x-parent.x)*0.65, c2y=node.y; parts.push(`<path class="line" d="M ${parent.x} ${parent.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${node.x} ${node.y}" />`); }); edgesSvg.innerHTML = parts.join(""); }
-function renderNodes() { const html = []; state.nodes.forEach(node=>{ const selectedClass = state.selectedIds.has(node.id)?"selected":"", editingClass = state.inlineEditingId===node.id?"editing":"", plainClass = node.isPlainText?"plain-text":"", shapeClass = (!node.isPlainText && node.shape)?getShapeClass(node.shape):""; const labelHtml = sanitizeNodeHtml(node.text); const editorHtml = state.inlineEditingId===node.id ? `<textarea class="inline-node-editor" data-node-editor="${node.id}" style="font-size:${node.fontSize||14}px;">${escapeHtml(node.text)}</textarea>` : `<span class="node-label" style="color: ${node.isPlainText?'#250905':getContrastColor(node.color)}; font-size:${node.fontSize||14}px;">${labelHtml}</span>`; const handles = node.isPlainText ? `<span class="resize-handle corner corner-br" data-handle="bottom-right" data-icon="↘"></span>` : `<span class="resize-handle edge-left" data-handle="left" data-icon="↔"></span><span class="resize-handle edge-right" data-handle="right" data-icon="↔"></span><span class="resize-handle edge-top" data-handle="top" data-icon="↕"></span><span class="resize-handle edge-bottom" data-handle="bottom" data-icon="↕"></span><span class="resize-handle corner corner-tl" data-handle="top-left" data-icon="↖"></span><span class="resize-handle corner corner-tr" data-handle="top-right" data-icon="↗"></span><span class="resize-handle corner corner-bl" data-handle="bottom-left" data-icon="↙"></span><span class="resize-handle corner corner-br" data-handle="bottom-right" data-icon="↘"></span>`; const bgColor = node.isPlainText?'transparent':node.color; html.push(`<div class="node ${selectedClass} ${editingClass} ${plainClass} ${shapeClass}" data-id="${node.id}" style="left:${node.x}px; top:${node.y}px; width:${node.width}px; height:${node.height}px; background:${bgColor};">${editorHtml}${handles}</div>`); }); nodesLayer.innerHTML = html.join(""); }
+
+
+
+function renderLines() {
+  const parts = [];
+  
+  state.nodes.forEach(node => {
+    // Пропускаем plain text узлы и узлы без родителя
+    if (node.isPlainText || !node.parentId) return;
+    
+    const parent = state.nodes.get(node.parentId);
+    if (parent.isPlainText) return;
+    
+    // Контрольные точки для кривой Безье
+    const c1x = parent.x + (node.x - parent.x) * 0.35;
+    const c1y = parent.y;
+    const c2x = parent.x + (node.x - parent.x) * 0.65;
+    const c2y = node.y;
+    
+    parts.push(`<path class="line" d="M ${parent.x} ${parent.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${node.x} ${node.y}" />`);
+  });
+  
+  edgesSvg.innerHTML = parts.join("");
+}
+
+function renderNodes() {
+  const html = [];
+  
+  state.nodes.forEach(node => {
+    // Классы узла
+    const selectedClass = state.selectedIds.has(node.id) ? "selected" : "";
+    const editingClass = state.inlineEditingId === node.id ? "editing" : "";
+    const plainClass = node.isPlainText ? "plain-text" : "";
+    const stickerClass = node.isSticker ? "sticker" : "";
+    const shapeClass = (!node.isPlainText && !node.isSticker && node.shape) ? getShapeClass(node.shape) : "";
+    
+    // Для стикеров своя цветовая логика (если нет кастомного цвета — жёлтый)
+    let bgColor;
+    if (node.isPlainText) {
+      bgColor = 'transparent';
+    } else if (node.isSticker) {
+      bgColor = node.color || "#FFF9C4";
+    } else {
+      bgColor = node.color;
+    }
+    
+    // Цвет текста
+    let textColor;
+    if (node.isPlainText) {
+      textColor = '#250905';
+    } else if (node.isSticker) {
+      textColor = '#3E2723';
+    } else {
+      textColor = getContrastColor(node.color);
+    }
+    
+    // Содержимое
+    const labelHtml = sanitizeNodeHtml(node.text);
+    const editorHtml = (state.inlineEditingId === node.id)
+      ? `<textarea class="inline-node-editor" data-node-editor="${node.id}" style="font-size:${node.fontSize || (node.isSticker ? 13 : 14)}px;">${escapeHtml(node.text)}</textarea>`
+      : `<span class="node-label" style="color: ${textColor}; font-size:${node.fontSize || (node.isSticker ? 13 : 14)}px;">${labelHtml}</span>`;
+    
+    // Ручки (у стикеров все 8 ручек, как у обычных узлов)
+    const handles = (node.isPlainText || node.isSticker)
+      ? `<span class="resize-handle corner corner-br" data-handle="bottom-right" data-icon="↘"></span>`
+      : `<span class="resize-handle edge-left" data-handle="left" data-icon="↔"></span>
+         <span class="resize-handle edge-right" data-handle="right" data-icon="↔"></span>
+         <span class="resize-handle edge-top" data-handle="top" data-icon="↕"></span>
+         <span class="resize-handle edge-bottom" data-handle="bottom" data-icon="↕"></span>
+         <span class="resize-handle corner corner-tl" data-handle="top-left" data-icon="↖"></span>
+         <span class="resize-handle corner corner-tr" data-handle="top-right" data-icon="↗"></span>
+         <span class="resize-handle corner corner-bl" data-handle="bottom-left" data-icon="↙"></span>
+         <span class="resize-handle corner corner-br" data-handle="bottom-right" data-icon="↘"></span>`;
+    
+    html.push(`
+      <div class="node ${selectedClass} ${editingClass} ${plainClass} ${stickerClass} ${shapeClass}" 
+           data-id="${node.id}" 
+           style="left:${node.x}px; top:${node.y}px; width:${node.width}px; height:${node.height}px; background:${bgColor};">
+        ${editorHtml}
+        ${handles}
+      </div>
+    `);
+  });
+  
+  nodesLayer.innerHTML = html.join("");
+}
+
+
 function renderPalette() { const selected = state.nodes.get(state.primarySelectedId); palette.innerHTML = ""; paletteColors.forEach(color=>{ const btn = document.createElement("button"); btn.className = "palette-btn" + (selected && selected.color===color?" active":""); btn.style.background = color; btn.type = "button"; btn.addEventListener("click",()=>{ if(!state.selectedIds.size) return; state.selectedIds.forEach(id=>{ const node = state.nodes.get(id); if(node && !node.isPlainText) node.color = color; }); render(); }); palette.appendChild(btn); }); }
-function renderSelectedMeta() { const selectedCount = state.selectedIds.size; const node = state.nodes.get(state.primarySelectedId); if(!selectedCount || !node) { selectedName.textContent = "нет"; renameNodeText.value = ""; shapeSelectorBlock.style.display = "none"; updateFontSizeDisplay(); return; } const plain = stripFormattingTags(node.text); selectedName.textContent = selectedCount>1?`${plain} (+${selectedCount-1})`:plain; renameNodeText.value = plain; if(!node.isPlainText && selectedCount===1) { shapeSelectorBlock.style.display = "block"; updateShapeSelectorUI(node.shape||"almond"); } else shapeSelectorBlock.style.display = "none"; updateFontSizeDisplay(); }
+
+function renderSelectedMeta() {
+  const selectedCount = state.selectedIds.size;
+  const node = state.nodes.get(state.primarySelectedId);
+  
+  if (!selectedCount || !node) {
+    selectedName.textContent = "нет";
+    renameNodeText.value = "";
+    shapeSelectorBlock.style.display = "none";
+    updateFontSizeDisplay();
+    renderStickerColorPalette(); // Скрывает блок цвета стикера
+    return;
+  }
+  
+  const plain = stripFormattingTags(node.text);
+  selectedName.textContent = selectedCount > 1 ? `${plain} (+${selectedCount - 1})` : plain;
+  renameNodeText.value = plain;
+  
+  // Формы — только для обычных узлов (не стикеров и не plain text)
+  const canChangeShape = !node.isPlainText && !node.isSticker && selectedCount === 1;
+  shapeSelectorBlock.style.display = canChangeShape ? "block" : "none";
+  if (canChangeShape) {
+    updateShapeSelectorUI(node.shape || "almond");
+  }
+  
+  // Обновляем палитру цветов для стикеров
+  renderStickerColorPalette();
+  updateFontSizeDisplay();
+}
+
+
+
+// Рендер большой палитры цветов для заметок
+
+
+function renderStickerColorPalette() {
+  const stickerBlock = document.getElementById("stickerColorBlock");
+  const stickerPalette = document.getElementById("stickerColorPalette");
+  
+  if (!stickerBlock || !stickerPalette) return;
+  
+  // Проверяем, выбран ли стикер
+  const selectedNode = state.nodes.get(state.primarySelectedId);
+  const isStickerSelected = selectedNode && selectedNode.isSticker && state.selectedIds.size === 1;
+  
+  // Показываем блок только когда выбран один стикер
+  stickerBlock.style.display = isStickerSelected ? "block" : "none";
+  
+  if (!isStickerSelected) return;
+  
+  // Генерируем палитру
+  stickerPalette.innerHTML = "";
+  
+  stickerColorPalette.forEach(color => {
+    const btn = document.createElement("button");
+    btn.className = "sticker-color-btn";
+    btn.style.backgroundColor = color;
+    btn.title = color;
+    
+    // Подсвечиваем активный цвет
+    if (selectedNode.color === color) {
+      btn.classList.add("active");
+    }
+    
+    // ВАЖНО: используем актуальный ID, чтобы в обработчике получить свежий узел
+    const nodeId = selectedNode.id;
+    
+    btn.addEventListener("click", () => {
+  const currentNode = state.nodes.get(nodeId);
+  console.log("Клик по цвету:", color, "Текущий узел:", currentNode);
+  if (currentNode && currentNode.isSticker) {
+    saveToHistory();
+    currentNode.color = color;
+    console.log("Новый цвет узла:", currentNode.color);
+    render();
+    setStatus(`🎨 Цвет стикера изменён на ${color}`);
+  } else {
+    setStatus("❌ Ошибка: заметка не найдена", true);
+      }
+    });
+    
+    stickerPalette.appendChild(btn);
+  });
+}
+
 function setSelection(ids, primaryId=null) { state.selectedIds = new Set(ids.filter(id=>state.nodes.has(id))); if(!state.selectedIds.size) state.primarySelectedId = null; else state.primarySelectedId = primaryId && state.selectedIds.has(primaryId)?primaryId:[...state.selectedIds][0]; }
+
 function toggleSelection(id) { if(!state.nodes.has(id)) return; if(state.selectedIds.has(id)){ state.selectedIds.delete(id); if(state.primarySelectedId===id) state.primarySelectedId=[...state.selectedIds][0]||null; } else { state.selectedIds.add(id); state.primarySelectedId=id; } }
-function render() { renderNodes(); renderLines(); renderPalette(); renderSelectedMeta(); updateTransform(); autoSave(); }
+
+function render() { 
+renderNodes(); 
+renderLines(); 
+renderPalette();
+renderStickerColorPalette(); 
+renderSelectedMeta(); 
+updateTransform(); 
+autoSave(); 
+}
 
 // ========== СОХРАНЕНИЕ ==========
 function saveMapToLocalStorage() { try { const mapData = { nodes: [], rootId: state.rootId, idCounter: state.idCounter, panX: state.panX, panY: state.panY, scale: state.scale, userPalette: paletteColors, version: "1.0" }; state.nodes.forEach(node=>{ mapData.nodes.push({ id:node.id, text:node.text, parentId:node.parentId, children:node.children, x:node.x, y:node.y, color:node.color, width:node.width, height:node.height, isPlainText:node.isPlainText, fontSize:node.fontSize, shape:node.shape }); }); localStorage.setItem('almond_map_autosave', JSON.stringify(mapData)); setStatus("💾 Автосохранение"); } catch(e) { console.error(e); } }
@@ -1164,6 +1913,381 @@ async function addExportButton() {
   document.body.appendChild(container);
 }
 
+// ========== ШАБЛОНЫ (PRESETS) ==========
+const STORAGE_KEY = 'almond_my_templates';
+
+// Встроенные шаблоны (данные)
+const builtInTemplates = {
+  roadmap: `@MAIN| 🗺️ Roadmap проекта
+@1| ⏰ I квартал
+@1.1| Исследование рынка
+@1.2| Анализ конкурентов
+@2| ⏰ II квартал
+@2.1| Разработка MVP
+@2.2| Тестирование
+@3| ⏰ III квартал
+@3.1| Запуск бета-версии
+@3.2| Сбор обратной связи
+@4| ⏰ IV квартал
+@4.1| Масштабирование
+@4.2| План на следующий год`,
+
+  swot: `@MAIN| 🔍 SWOT анализ
+@1| 💪 Сильные стороны
+@1.1| Уникальная технология
+@1.2| Сильная команда
+@1.3| Узнаваемый бренд
+@2| 🤔 Слабые стороны
+@2.1| Ограниченный бюджет
+@2.2| Нехватка времени
+@3| 🌟 Возможности
+@3.1| Новые рынки
+@3.2| Государственная поддержка
+@4| ⚠️ Угрозы
+@4.1| Высокая конкуренция
+@4.2| Экономическая нестабильность`,
+
+  brainstorm: `@MAIN| 💡 Brainstorm
+@1| 🎯 Проблема
+@1.1| Как привлечь больше клиентов?
+@2| 💭 Идеи
+@2.1| Запустить реферальную программу
+@2.2| Сделать бесплатный пробный период
+@2.3| Усилить присутствие в соцсетях
+@3| 📊 Оценка
+@3.1| MVP за 2 недели
+@3.2| Бюджет: 50 000₽
+@4| ✅ Следующие шаги
+@4.1| Назначить ответственного
+@4.2| Запустить тест`
+};
+
+// Загрузка моих шаблонов из localStorage
+function loadMyTemplates() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch(e) { return []; }
+  }
+  return [];
+}
+
+// Сохранение моих шаблонов в localStorage
+function saveMyTemplates(templates) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
+}
+
+// Создание уникального ID
+function generateTemplateId() {
+  return Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+}
+
+// Сохранение текущей карты как шаблона
+function saveCurrentAsTemplate() {
+  const name = prompt("📝 Введите название шаблона:", "Мой шаблон " + new Date().toLocaleString());
+  if (!name || name.trim() === "") return;
+  
+  // Собираем данные текущей карты
+  const nodesData = [];
+  state.nodes.forEach(node => {
+    nodesData.push({
+      id: node.id,
+      text: node.text,
+      parentId: node.parentId,
+      children: node.children,
+      x: node.x,
+      y: node.y,
+      color: node.color,
+      width: node.width,
+      height: node.height,
+      isPlainText: node.isPlainText,
+      fontSize: node.fontSize,
+      shape: node.shape
+    });
+  });
+  
+  const template = {
+    id: generateTemplateId(),
+    name: name.trim(),
+    createdAt: new Date().toISOString(),
+    nodes: nodesData,
+    rootId: state.rootId,
+    idCounter: state.idCounter
+  };
+  
+  const myTemplates = loadMyTemplates();
+  myTemplates.push(template);
+  saveMyTemplates(myTemplates);
+  updateTemplateUI();
+  setStatus(`✅ Шаблон "${name.trim()}" сохранён`);
+}
+
+// Загрузка шаблона по данным
+function loadTemplateFromData(templateData) {
+  if (!templateData.nodes || !templateData.nodes.length) {
+    setStatus("❌ Ошибка: шаблон не содержит узлов", true);
+    return;
+  }
+  
+  saveToHistory(); // Сохраняем текущее состояние для Undo
+  
+  clearMapData();
+  
+  // Восстанавливаем узлы
+  const nodeMap = new Map();
+  templateData.nodes.forEach(nodeData => {
+    const node = {
+      ...nodeData,
+      children: nodeData.children || []
+    };
+    state.nodes.set(nodeData.id, node);
+    nodeMap.set(nodeData.id, node);
+  });
+  
+  // Восстанавливаем связи
+  state.nodes.forEach(node => {
+    if (node.parentId && nodeMap.has(node.parentId)) {
+      const parent = state.nodes.get(node.parentId);
+      if (!parent.children.includes(node.id)) {
+        parent.children.push(node.id);
+      }
+    }
+  });
+  
+  state.rootId = templateData.rootId;
+  state.idCounter = templateData.idCounter || state.idCounter;
+  
+  // Центрируем карту
+  setTimeout(() => {
+    const rect = mapShell.getBoundingClientRect();
+    state.panX = rect.width / 2;
+    state.panY = rect.height / 2;
+    state.scale = 1;
+    updateTransform();
+  }, 50);
+  
+  render();
+  setStatus(`✅ Шаблон загружен`);
+}
+
+// Загрузка встроенного шаблона
+function loadBuiltInTemplate(templateKey) {
+  const sourceText = builtInTemplates[templateKey];
+  if (!sourceText) return;
+  
+  saveToHistory(); // Сохраняем текущее состояние для Undo
+  
+  try {
+    const parsed = parseStrictSyntax(sourceText);
+    buildFromStrict(parsed);
+    setStatus(`✅ Шаблон "${templateKey}" загружен`);
+  } catch(e) {
+    setStatus("❌ Ошибка загрузки шаблона: " + e.message, true);
+  }
+}
+
+// Удаление моего шаблона
+function deleteMyTemplate(templateId) {
+  if (confirm("Удалить этот шаблон?")) {
+    const myTemplates = loadMyTemplates();
+    const newTemplates = myTemplates.filter(t => t.id !== templateId);
+    saveMyTemplates(newTemplates);
+    updateTemplateUI();
+    setStatus("🗑️ Шаблон удалён");
+  }
+}
+
+// Обновление всех UI элементов шаблонов
+function updateTemplateUI() {
+  const myTemplates = loadMyTemplates();
+  
+  // Обновляем выпадающий список (мои шаблоны)
+  const myTemplatesList = document.getElementById('myTemplatesList');
+  if (myTemplatesList) {
+    myTemplatesList.innerHTML = '';
+    if (myTemplates.length === 0) {
+      myTemplatesList.innerHTML = '<div style="padding:8px 16px; color:#9C8A79; font-size:12px;">Нет сохранённых шаблонов</div>';
+    } else {
+      myTemplates.forEach(t => {
+        const item = document.createElement('div');
+        item.className = 'template-item';
+        item.innerHTML = `📄 ${t.name}`;
+        item.onclick = () => loadTemplateFromData(t);
+        myTemplatesList.appendChild(item);
+      });
+    }
+  }
+  
+  // Обновляем модальное окно
+  const modalList = document.getElementById('templatesModalMyList');
+  if (modalList) {
+    modalList.innerHTML = '';
+    if (myTemplates.length === 0) {
+      modalList.innerHTML = '<div style="padding:12px; color:#9C8A79; text-align:center;">Нет сохранённых шаблонов</div>';
+    } else {
+      myTemplates.forEach(t => {
+        const div = document.createElement('div');
+        div.className = 'template-modal-item';
+        div.innerHTML = `
+          <div>
+            <span class="template-modal-item-name">📄 ${t.name}</span>
+            <span class="template-modal-item-date">${new Date(t.createdAt).toLocaleDateString()}</span>
+          </div>
+          <div>
+            <button class="template-modal-item-delete" data-delete="${t.id}" title="Удалить">🗑️</button>
+          </div>
+        `;
+        modalList.appendChild(div);
+      });
+      // Добавляем обработчики удаления
+      document.querySelectorAll('[data-delete]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          deleteMyTemplate(btn.dataset.delete);
+        };
+      });
+    }
+  }
+}
+
+// Переключение выпадающего списка
+let dropdownOpen = false;
+function toggleDropdown() {
+  const dropdown = document.getElementById('templateDropdown');
+  if (dropdown) {
+    dropdownOpen = !dropdownOpen;
+    dropdown.classList.toggle('show', dropdownOpen);
+  }
+}
+
+// Закрытие выпадающего списка при клике вне
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('templateDropdown');
+  const trigger = document.getElementById('loadTemplateBtn');
+  if (dropdown && trigger && !trigger.contains(e.target) && !dropdown.contains(e.target)) {
+    dropdown.classList.remove('show');
+    dropdownOpen = false;
+  }
+});
+
+// Модальное окно
+let modalOpen = false;
+function openTemplatesModal() {
+  const modal = document.getElementById('templatesModal');
+  if (modal) {
+    modalOpen = true;
+    modal.classList.add('open');
+    updateTemplateUI(); // Обновляем при открытии
+  }
+}
+function closeTemplatesModal() {
+  const modal = document.getElementById('templatesModal');
+  if (modal) {
+    modalOpen = false;
+    modal.classList.remove('open');
+  }
+}
+
+// Инициализация обработчиков шаблонов
+function initTemplates() {
+  updateTemplateUI();
+  
+  // Кнопка сохранения
+  const saveBtn = document.getElementById('saveTemplateBtn');
+  if (saveBtn) saveBtn.onclick = () => saveCurrentAsTemplate();
+  
+  // Кнопка загрузки (выпадающий список)
+  const loadBtn = document.getElementById('loadTemplateBtn');
+  if (loadBtn) loadBtn.onclick = (e) => { e.stopPropagation(); toggleDropdown(); };
+  
+  // Кнопка управления (модалка)
+  const manageBtn = document.getElementById('templatesManageBtn');
+  if (manageBtn) manageBtn.onclick = () => openTemplatesModal();
+  
+  // Закрытие модалки
+  const modalClose = document.getElementById('templatesModalClose');
+  if (modalClose) modalClose.onclick = () => closeTemplatesModal();
+  const modalCancel = document.getElementById('templatesModalCancel');
+  if (modalCancel) modalCancel.onclick = () => closeTemplatesModal();
+  
+  // Клик по фону модалки
+  const modal = document.getElementById('templatesModal');
+  if (modal) modal.onclick = (e) => { if (e.target === modal) closeTemplatesModal(); };
+  
+  // Встроенные шаблоны из выпадающего списка
+  document.querySelectorAll('[data-template]').forEach(el => {
+    el.onclick = () => {
+      const key = el.dataset.template;
+      loadBuiltInTemplate(key);
+      dropdownOpen = false;
+      const dropdown = document.getElementById('templateDropdown');
+      if (dropdown) dropdown.classList.remove('show');
+    };
+  });
+  
+  // Загрузка встроенных из модалки
+  document.querySelectorAll('[data-template-load]').forEach(el => {
+    el.onclick = () => {
+      const key = el.dataset.templateLoad;
+      loadBuiltInTemplate(key);
+      closeTemplatesModal();
+    };
+  });
+}
+
+// обработчик кнопки для корневого узла
+
+// Кнопка создания корневого узла
+const createRootBtn = document.getElementById("createRootBtn");
+if (createRootBtn) {
+  createRootBtn.addEventListener("click", createRootNode);
+}
+
+// ========== СОЗДАНИЕ КОРНЕВОГО УЗЛА (ОСНОВЫ) ==========
+function createRootNode() {
+  // Сохраняем текущее состояние для Undo
+  saveToHistory();
+  
+  // Очищаем карту (опционально — если хотим начать с чистого листа)
+  // Раскомментируй следующую строку, если хочешь очищать карту перед созданием основы
+  // clearMapData();
+  
+  // Если уже есть корневой узел, спрашиваем
+  if (state.rootId) {
+    const overwrite = confirm("На карте уже есть корневой элемент. Создать новый (текущая карта будет очищена)?");
+    if (!overwrite) return;
+    clearMapData();
+  }
+  
+  // Запрашиваем текст узла
+  const nodeText = prompt("📝 Введите название основного узла:", "Моя идея");
+  if (!nodeText || nodeText.trim() === "") {
+    setStatus("❌ Создание отменено");
+    return;
+  }
+  
+  // Создаём корневой узел в центре
+  const rootColor = paletteColors[0];
+  const rootId = createNode(nodeText.trim(), null, 0, 0, rootColor, false, "almond");
+  state.rootId = rootId;
+  
+  // Центрируем камеру на узле
+  setTimeout(() => {
+    const rect = mapShell.getBoundingClientRect();
+    state.panX = rect.width / 2;
+    state.panY = rect.height / 2;
+    state.scale = 1;
+    updateTransform();
+  }, 50);
+  
+  // Выделяем новый узел
+  setSelection([rootId], rootId);
+  render();
+  
+  setStatus(`✅ Основной узел "${nodeText.trim()}" создан. Теперь можно добавлять подэлементы!`);
+}
+
 
 // ========== ИНИЦИАЛИЗАЦИЯ ==========
 addSaveLoadButtons();
@@ -1234,12 +2358,78 @@ window.addEventListener("resize", () => {
   state.panY = newCenterY - oldCenter.y * state.scale;
   updateTransform();
 });
+initTemplates();
+addStickerButtonToUI(); 
+
+
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { addExportButton(); openIntro(); });
 else { addExportButton(); openIntro(); }
 
 document.getElementById("undoBtn")?.addEventListener("click", () => undo());
 document.getElementById("insertIntermediateBtn")?.addEventListener("click", () => insertIntermediateAbove());
+
+
+// ========== ФИЧА «ЗАМЕТКА» (СТИКЕР) ==========
+
+// Функция создания заметки в центре вьюпорта
+
+
+
+function addStickerNote() {
+  saveToHistory();
+  
+  const rect = mapShell.getBoundingClientRect();
+  const worldX = (rect.width / 2 - state.panX) / state.scale;
+  const worldY = (rect.height / 2 - state.panY) / state.scale;
+  
+  const id = String(state.idCounter++);
+  state.nodes.set(id, {
+    id: id,
+    text: "📝 Новая заметка\n\nДвойной клик для редактирования...",
+    parentId: null,
+    children: [],
+    x: worldX,
+    y: worldY,
+    color: stickerColorPalette[0], // первый цвет из большой палитры
+    width: 200,
+    height: 150,
+    isPlainText: false,
+    isSticker: true,
+    fontSize: 13,
+    shape: "rounded"
+  });
+  
+  setSelection([id], id);
+  render();
+  setTimeout(() => openInlineEditor(id), 100);
+  setStatus("📝 Стикер-заметка добавлена! Выберите цвет на левой панели");
+}
+
+
+// Функция изменения цвета заметки (для кастомизации)
+function changeStickerColor(stickerId, newColor) {
+  const sticker = state.nodes.get(stickerId);
+  if (sticker && sticker.isSticker) {
+    saveToHistory();
+    sticker.color = newColor;
+    render();
+    setStatus("🎨 Цвет стикера изменён");
+  }
+}
+
+// Кнопка для добавления заметки (добавим в панель)
+function addStickerButtonToUI() {
+  const container = document.querySelector('.panel .mt-2.flex.gap-2:has(#addPlainTextBtn)');
+  if (container) {
+    const stickerBtn = document.createElement('button');
+    stickerBtn.id = 'addStickerBtn';
+    stickerBtn.className = 'rounded-full bg-[#E9B978] px-4 py-2 text-sm text-[#4C2213] hover:bg-[#E2AE6A] cursor-pointer';
+    stickerBtn.innerHTML = '📌 Заметка';
+    stickerBtn.onclick = () => addStickerNote();
+    container.appendChild(stickerBtn);
+  }
+}
 
 </script>
 </body>
